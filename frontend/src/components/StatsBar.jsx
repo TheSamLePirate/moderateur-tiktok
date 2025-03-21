@@ -7,7 +7,7 @@ const StatsBar = ({ viewerCount, likeCount, diamondsCount }) => {
         </div>
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Viewers</span>
-          <span className="text-xl font-bold text-white">{viewerCount.toLocaleString()}</span>
+          <span className="text-xl font-bold text-white">{viewerCount}</span>
         </div>
       </div>
       <div className="flex flex-col items-center gap-2">
@@ -16,7 +16,7 @@ const StatsBar = ({ viewerCount, likeCount, diamondsCount }) => {
         </div>
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Likes</span>
-          <span className="text-xl font-bold text-white">{likeCount.toLocaleString()}</span>
+          <span className="text-xl font-bold text-white">{likeCount}</span>
         </div>
       </div>
       <div className="flex flex-col items-center gap-2">
@@ -25,7 +25,7 @@ const StatsBar = ({ viewerCount, likeCount, diamondsCount }) => {
         </div>
         <div className="flex flex-col items-center">
           <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">Diamonds</span>
-          <span className="text-xl font-bold text-white">{diamondsCount.toLocaleString()}</span>
+          <span className="text-xl font-bold text-white">{diamondsCount}</span>
         </div>
       </div>
     </div>

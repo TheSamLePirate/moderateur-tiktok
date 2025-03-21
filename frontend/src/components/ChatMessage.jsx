@@ -1,11 +1,55 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import UserDataDisplay from './UserDataDisplay'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
+import OpenAI from "openai";
 
+// Reason Modal Component using Portal
+const ReasonModal = ({ isOpen, onClose, onSubmit, nickname, reasonText, setReasonText }) => {
+  if (!isOpen) return null;
+  
+  return createPortal(
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-5 w-full max-w-md">
+        <h3 className="text-xl font-bold text-white mb-4">Add to Undesirables</h3>
+        <p className="text-gray-300 mb-4">
+          Please provide a reason for adding{" "}
+          <span className="font-bold text-rose-400">{nickname}</span>{" "}
+          to the undesirables list:
+        </p>
+        
+        <textarea
+          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 focus:outline-none resize-none"
+          rows="3"
+          placeholder="Enter reason here..."
+          value={reasonText}
+          onChange={(e) => setReasonText(e.target.value)}
+        ></textarea>
+        
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onSubmit}
+            className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!reasonText.trim()}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
 
 const ChatMessage = ({ 
   message, 
@@ -17,6 +61,28 @@ const ChatMessage = ({
   const [showActions, setShowActions] = useState(false)
   const [showReasonModal, setShowReasonModal] = useState(false)
   const [reasonText, setReasonText] = useState('')
+
+
+  const openai_api_key = localStorage.getItem('openaiApiKey')
+  const openai = new OpenAI({
+    apiKey: openai_api_key,
+    dangerouslyAllowBrowser: true
+  })
+
+  const speak = async (text) => {
+    const mp3 = await openai.audio.speech.create({
+      model: "gpt-4o-mini-tts",
+      voice: "onyx",
+      input: text,
+      instructions: "Parle de facon enjouée",
+    });
+    console.log("Audio Finished");
+    const arrayBuffer = await mp3.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play();
+  }
   
   // Determine username styles based on user status
   const getUsernameStyles = () => {
@@ -114,38 +180,14 @@ const ChatMessage = ({
         </div>
 
         {/* Reason Modal */}
-        {showReasonModal && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-5 w-full max-w-md">
-              <h3 className="text-xl font-bold text-white mb-4">Add to Undesirables</h3>
-              <p className="text-gray-300 mb-4">Please provide a reason for adding <span className="font-bold text-rose-400">{message.nickname}</span> to the undesirables list:</p>
-              
-              <textarea
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 focus:outline-none resize-none"
-                rows="3"
-                placeholder="Enter reason here..."
-                value={reasonText}
-                onChange={(e) => setReasonText(e.target.value)}
-              ></textarea>
-              
-              <div className="flex justify-end gap-3 mt-4">
-                <button
-                  onClick={() => setShowReasonModal(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleReasonSubmit}
-                  className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!reasonText.trim()}
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReasonModal 
+          isOpen={showReasonModal}
+          onClose={() => setShowReasonModal(false)}
+          onSubmit={handleReasonSubmit}
+          nickname={message.nickname}
+          reasonText={reasonText}
+          setReasonText={setReasonText}
+        />
       </div>
     )
   } 
@@ -182,6 +224,7 @@ const ChatMessage = ({
       </div>
 
       {/* Message content */}
+      <button onClick={() => speak(message.comment)}>Speak</button>
       <div className="text-white/90 bg-black/50 p-2.5 rounded-lg break-words mt-0.5">
         {message.comment}
         
@@ -257,6 +300,7 @@ const ChatMessage = ({
                 AI RESPONSE
               </p>
               <p className="text-sm text-white/80 italic">
+              <button onClick={() => speak(message.suggestedResponse)}>Speak</button>
               <Markdown 
                 remarkPlugins={[remarkGfm, remarkMath]} 
                 rehypePlugins={[rehypeKatex]}
@@ -315,46 +359,14 @@ const ChatMessage = ({
       </div>
 
       {/* Reason Modal */}
-      {showReasonModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-5 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">
-              Add to Undesirables
-            </h3>
-            <p className="text-gray-300 mb-4">
-              Please provide a reason for adding{" "}
-              <span className="font-bold text-rose-400">
-                {message.nickname}
-              </span>{" "}
-              to the undesirables list:
-            </p>
-
-            <textarea
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 focus:outline-none resize-none"
-              rows="3"
-              placeholder="Enter reason here..."
-              value={reasonText}
-              onChange={(e) => setReasonText(e.target.value)}
-            ></textarea>
-
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowReasonModal(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReasonSubmit}
-                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!reasonText.trim()}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReasonModal 
+        isOpen={showReasonModal}
+        onClose={() => setShowReasonModal(false)}
+        onSubmit={handleReasonSubmit}
+        nickname={message.nickname}
+        reasonText={reasonText}
+        setReasonText={setReasonText}
+      />
     </div>
   );
 }
