@@ -9,46 +9,46 @@ const TopLikers = ({ likers }) => {
   const [prevLikers, setPrevLikers] = useState({});
   const [flashingLikers, setFlashingLikers] = useState({});
   
-  useEffect(() => {
-    // Create a map of current like counts by uniqueId
-    const currentLikerCounts = {};
-    sortedLikers.forEach(liker => {
-      currentLikerCounts[liker.uniqueId] = liker.likeCount;
-    });
+  // useEffect(() => {
+  //   // Create a map of current like counts by uniqueId
+  //   const currentLikerCounts = {};
+  //   sortedLikers.forEach(liker => {
+  //     currentLikerCounts[liker.uniqueId] = liker.likeCount;
+  //   });
     
-    // Detect changes (but skip first render)
-    if (Object.keys(prevLikers).length > 0) {
-      const newFlashingLikers = {};
+  //   // Detect changes (but skip first render)
+  //   if (Object.keys(prevLikers).length > 0) {
+  //     const newFlashingLikers = {};
       
-      // Check for likers whose count has changed
-      sortedLikers.forEach(liker => {
-        const currentCount = liker.likeCount;
-        const prevCount = prevLikers[liker.uniqueId];
+  //     // Check for likers whose count has changed
+  //     sortedLikers.forEach(liker => {
+  //       const currentCount = liker.likeCount;
+  //       const prevCount = prevLikers[liker.uniqueId];
         
-        // If we have a previous count and it's different, trigger flash
-        if (prevCount !== undefined && prevCount !== currentCount) {
-          newFlashingLikers[liker.uniqueId] = true;
-        }
-      });
+  //       // If we have a previous count and it's different, trigger flash
+  //       if (prevCount !== undefined && prevCount !== currentCount) {
+  //         newFlashingLikers[liker.uniqueId] = true;
+  //       }
+  //     });
       
-      // If we found changes, update the flashing state
-      if (Object.keys(newFlashingLikers).length > 0) {
-        // Set flashing state
-        setFlashingLikers(newFlashingLikers);
+  //     // If we found changes, update the flashing state
+  //     if (Object.keys(newFlashingLikers).length > 0) {
+  //       // Set flashing state
+  //       setFlashingLikers(newFlashingLikers);
         
-        // Clear flashing after animation completes
-        const timer = setTimeout(() => {
-          setFlashingLikers({});
-        }, 1000);
+  //       // Clear flashing after animation completes
+  //       const timer = setTimeout(() => {
+  //         setFlashingLikers({});
+  //       }, 1000);
         
-        return () => clearTimeout(timer);
-      }
-    }
+  //       return () => clearTimeout(timer);
+  //     }
+  //   }
     
-    // Always update the previous likers state after comparison
-    // This needs to happen outside the if block to capture the first render too
-    setPrevLikers(currentLikerCounts);
-  }, [sortedLikers, prevLikers]); // Include both dependencies
+  //   // Always update the previous likers state after comparison
+  //   // This needs to happen outside the if block to capture the first render too
+  //   setPrevLikers(currentLikerCounts);
+  // }, [sortedLikers, prevLikers]); // Include both dependencies
   
   return (
     <div className="rounded-2xl border border-gray-800 bg-gray-900/70 backdrop-blur-sm shadow-xl overflow-hidden">

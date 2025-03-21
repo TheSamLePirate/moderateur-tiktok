@@ -10,6 +10,8 @@ const axios = require('axios');
 const db = require('./db'); // Import our database module
 const path = require('path'); // Add path module
 const cors = require('cors'); // Import cors package
+const tavily = require('@tavily/core');
+const exec = require('child_process').exec;
 
 const app = express();
 const httpServer = createServer(app);
@@ -311,6 +313,7 @@ utilise l'outil get_chat_messages pour avoir les messages du chat pour répondre
 Tu peux donner la liste exacte des utilisateurs présents dans le chat.
 Tu peux répéter et analyser les messages du chat pour donner des statistiques, des explications...
 Fais des réponses concises et courtes.
+utilise search_internet function pour chercher des images sur internet pour illustrer tes réponses. Affiche toujours une image (en markdown) dans ta réponse markdown.
 Tu peux chercher des images sur internet pour illustrer tes réponses.
 tu peux tout chercher sur internet.
 Ne cites jamais les sources.
@@ -369,7 +372,28 @@ function removeThinkingContent(text) {
     return processed.trim();
 }
 
-const callFunction = async (name, args) => {
+const serperApiSearch = async (query, tavilyApiKey) => {
+    // Using direct HTTP request instead of the Tavily SDK
+    try {
+        const response = await axios.post('https://api.tavily.com/search', {
+            query: query,
+            search_depth: "advanced",
+            include_images: true
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tavilyApiKey}`
+            }
+        });
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error searching with Tavily API:', error.message);
+        return null;
+    }
+}
+
+const callFunction = async (name, args, tavilyApiKey = null) => {
     console.log('callFunction');
     console.log(name);
     console.log(args);
@@ -380,12 +404,16 @@ const callFunction = async (name, args) => {
         console.log('get_chat_messages');
         return chatMessages;
     }
+    if(name === 'search_internet'){
+        console.log('serper_api_search');
+        return serperApiSearch(args.query, tavilyApiKey);
+    }
 
     return 'Error executing function';
 };
 
 // Function to generate a suggested response using GPT-4o-mini
-async function generateResponseWithOpenAI(text, apiKey = null) {
+async function generateResponseWithOpenAI(text, apiKey = null, tavilyApiKey = null) {
     try {
         // Use provided API key or fall back to environment variable
         const openaiClient = apiKey ? 
@@ -413,50 +441,71 @@ async function generateResponseWithOpenAI(text, apiKey = null) {
           ],
         });
 
+        const myTools=[{ 
+            type: "web_search_preview" ,
+            user_location: {
+                type: "approximate",
+                country: "FR",
+                city: "Paris",
+                region: "Paris"
+            },
+            search_context_size: "high",
+        },{
+            type: "function",
+            name: "execute_js_code",
+            description: "Execute js code and return the result",
+            parameters: {
+                type: "object",
+                properties: {
+                    code: {
+                        type: "string",
+                        description: "The js code to execute",
+                    }
+                },
+                required: ["code"],
+            },
+        },{
+            type: "function",
+            name: "get_chat_messages",
+            description: "Get the chat messages to answer questions about the chat, the live",
+            parameters: {
+                type: "object",
+                properties: {
+                    number: {
+                        type: "number",
+                        description: "The number of messages to return. 0 for all messages",
+                    },
+                    search: {
+                        type: "string",
+                        description: "The search query. If empty, return all messages",
+                    }
+                },
+                required: ["number", "search"],
+            },
+        }];
+
+        if (tavilyApiKey) {
+            myTools.push({
+                type: "function",
+                name: "search_internet",
+                description: "Search the internet for result and images",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        query: {
+                            type: "string",
+                            description: "the query to search the internet",
+                        }
+                    },
+                    required: ["query"],
+                },
+            });
+        }
+        
+
         const response = await openaiClient.responses.create({
             model: "gpt-4o",
-            tools: [{ 
-                type: "web_search_preview" ,
-                user_location: {
-                    type: "approximate",
-                    country: "FR",
-                    city: "Paris",
-                    region: "Paris"
-                },
-                search_context_size: "high",
-            },{
-                type: "function",
-                name: "execute_js_code",
-                description: "Execute js code and return the result",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        code: {
-                            type: "string",
-                            description: "The js code to execute",
-                        }
-                    },
-                    required: ["code"],
-                },
-            },{
-                type: "function",
-                name: "get_chat_messages",
-                description: "Get the chat messages to answer questions about the chat, the live",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        number: {
-                            type: "number",
-                            description: "The number of messages to return. 0 for all messages",
-                        },
-                        search: {
-                            type: "string",
-                            description: "The search query. If empty, return all messages",
-                        }
-                    },
-                    required: ["number", "search"],
-                },
-            }],
+            tools: myTools,
             tool_choice: "auto",
             instructions: systemPrompt,
             input: input
@@ -473,9 +522,9 @@ async function generateResponseWithOpenAI(text, apiKey = null) {
             const args = JSON.parse(toolCall.arguments);
             input.push(toolCall);
         
-            const result = await callFunction(name, args);
+            const result = await callFunction(name, args, tavilyApiKey);
             console.log('function call');
-            //console.log(JSON.stringify(result));
+            console.log(JSON.stringify(result));
             input.push({
                 type: "function_call_output",
                 call_id: toolCall.call_id,
@@ -494,8 +543,7 @@ async function generateResponseWithOpenAI(text, apiKey = null) {
                 input: input,
                 instructions: systemPrompt
             });
-            
-            //console.log(response.output_text);
+            console.log(response.output_text);
             return response.output_text;
         }
     } catch (error) {
@@ -505,12 +553,12 @@ async function generateResponseWithOpenAI(text, apiKey = null) {
 }
 
 // Main function to generate a response using the selected provider
-async function generateResponse(text, provider = 'openai', model = null, apiKey = null) {
+async function generateResponse(text, provider = 'openai', model = null, apiKey = null, tavilyApiKey = null) {
     
     if (provider === 'ollama' && model) {
         return generateResponseWithOllama(text, model);
     } else {
-        return generateResponseWithOpenAI(text, apiKey);
+        return generateResponseWithOpenAI(text, apiKey, tavilyApiKey);
     }
 }
 
@@ -556,6 +604,10 @@ io.on('connection', (socket) => {
             if (options.openaiApiKey) {
                 socket.openaiApiKey = options.openaiApiKey;
                 console.log('Client provided OpenAI API key');
+            }
+            if (options.tavilyApiKey) {
+                socket.tavilyApiKey = options.tavilyApiKey;
+                console.log('Client provided Tavily API key');
             }
             
             console.log(`Client using AI provider: ${socket.aiProvider}${socket.aiModel ? ', model: ' + socket.aiModel : ''}`);
@@ -686,7 +738,8 @@ io.on('connection', (socket) => {
                         theMessage, 
                         socket.aiProvider, 
                         socket.aiModel, 
-                        socket.openaiApiKey 
+                        socket.openaiApiKey,
+                        socket.tavilyApiKey
                     );
                     if (suggestedResponse) {
                         msg.suggestedResponse = suggestedResponse;
@@ -864,7 +917,56 @@ const calculateCost=async(usage)=>{
     return cost;
 }
 
+const testPasteAndEnter=async(text)=>{
+    const pythonScript =`import pyperclip
+import pyautogui
+import time
+time.sleep(2)
+pyperclip.copy("${text}")
+pyautogui.hotkey('command', 'v',interval=0.25)
+time.sleep(0.1)
+pyautogui.press('enter')`;
 
+    return new Promise((resolve, reject) => {
+        // Write the Python script to a temporary file
+        const fs = require('fs');
+        const tempScriptPath = '/tmp/paste_script.py';
+        
+        fs.writeFile(tempScriptPath, pythonScript, (err) => {
+            if (err) {
+                console.error('Error writing temporary Python script:', err);
+                reject(err);
+                return;
+            }
+            
+            // Execute the Python script
+            exec(`python3 ${tempScriptPath}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Error executing Python script: ${error}`);
+                    console.error(`stderr: ${stderr}`);
+                    reject(error);
+                    return;
+                }
+                
+                console.log(`Python script executed successfully`);
+                console.log(`stdout: ${stdout}`);
+                
+                // Clean up the temporary file
+                fs.unlink(tempScriptPath, (unlinkErr) => {
+                    if (unlinkErr) {
+                        console.warn('Could not delete temporary script file:', unlinkErr);
+                    }
+                });
+                
+                resolve(stdout);
+            });
+        });
+    });
+}
 
-//test("Quelle heure est il?");
-//test("Quelle est la meteo à Ales? genere un simple rapport la date et le temps avec des emoji.");
+// testPasteAndEnter("The thext has to be copied and pasted").then(() => {
+//     console.log("Text pasted and enter pressed successfully");
+// }).catch(err => {
+//     console.error("Failed to paste text and press enter:", err);
+// });
+

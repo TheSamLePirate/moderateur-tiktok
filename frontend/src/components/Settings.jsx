@@ -11,6 +11,7 @@ const Settings = ({
   aiProvider, setAiProvider,
   aiModel, setAiModel,
   openaiApiKey, setOpenaiApiKey,
+  tavilyApiKey, setTavilyApiKey,
   availableOllamaModels,
 }) => {
   // Function to toggle dark theme and update localStorage
@@ -351,6 +352,24 @@ const Settings = ({
                   onChange={(e) => {
                     setOpenaiApiKey(e.target.value);
                     localStorage.setItem('openaiApiKey', e.target.value);
+                  }} 
+                  className="w-full pl-8 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all duration-200"
+                  placeholder="sk-..."
+                />
+              </div>
+              <label className="block mb-2 text-sm font-medium text-gray-300">Tavily search API key</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v-1l1-1 1-1-1.414-1.414A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <input 
+                  type="password" 
+                  value={tavilyApiKey} 
+                  onChange={(e) => {
+                    setTavilyApiKey(e.target.value);
+                    localStorage.setItem('tavilyApiKey', e.target.value);
                   }} 
                   className="w-full pl-8 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all duration-200"
                   placeholder="sk-..."

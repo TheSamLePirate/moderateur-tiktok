@@ -43,7 +43,7 @@ function App() {
   // AI response state
   const [isGeneratingResponse, setIsGeneratingResponse] = useState(false)
   const [openaiApiKey, setOpenaiApiKey] = useState('')
-  
+  const [tavilyApiKey, setTavilyApiKey] = useState('')
   // Settings
   const [showModeration, setShowModeration] = useState(false)
   const [showAIResponses, setShowAIResponses] = useState(false)
@@ -164,6 +164,7 @@ function App() {
         loadSetting('enableFlvStream', setEnableFlvStream, true);
         loadSetting('tiktokUsername', setYourUsername, '');
         loadSetting('openaiApiKey', setOpenaiApiKey, '');
+        loadSetting('tavilyApiKey', setTavilyApiKey, '');
         loadSetting('aiProvider', setAiProvider, 'openai');
         loadSetting('aiModel', setAiModel, '');
         loadSetting('autoScroll', setAutoScroll, true);
@@ -209,6 +210,7 @@ function App() {
         loadSetting('enableFlvStream', setEnableFlvStream, true);
         loadSetting('tiktokUsername', setYourUsername, '');
         loadSetting('openaiApiKey', setOpenaiApiKey, '');
+        loadSetting('tavilyApiKey', setTavilyApiKey, '');
         loadSetting('aiProvider', setAiProvider, 'openai');
         loadSetting('aiModel', setAiModel, '');
         loadSetting('autoScroll', setAutoScroll, true);
@@ -271,6 +273,7 @@ function App() {
         showModeration,
         showResponses: showAIResponses,
         openaiApiKey: aiProvider === 'openai' ? openaiApiKey : undefined,
+        tavilyApiKey: aiProvider === 'openai' ? tavilyApiKey : undefined,
         sessionId: sessionId
       })
       
@@ -1066,6 +1069,8 @@ function App() {
                 openaiApiKey={openaiApiKey}
                 setOpenaiApiKey={setOpenaiApiKey}
                 availableOllamaModels={availableOllamaModels}
+                tavilyApiKey={tavilyApiKey}
+                setTavilyApiKey={setTavilyApiKey}
                 setAvailableOllamaModels={setAvailableOllamaModels}
               />
             </div>

@@ -223,34 +223,45 @@ const ChatMessage = ({
         </span>
       </div>
 
-      {/* Message content */}
-      <button onClick={() => speak(message.comment)}>Speak</button>
-      <div className="text-white/90 bg-black/50 p-2.5 rounded-lg break-words mt-0.5">
-        {message.comment}
+      {/* Message content with play button to the left */}
+      <div className="flex items-start">
+        <button 
+          onClick={() => speak(message.comment)}
+          className="absolute z-50 top-15 left-1 flex-shrink-0 inline-flex items-center justify-center text-emerald-500 hover:text-emerald-300 transition-colors focus:outline-none mr-2 p-1 rounded-full"
+          title="Play text"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+          </svg>
+        </button>
         
-        {/* Moderation indicator */}
-        {showModeration && message.moderation == undefined && (
-          <div className="absolute bottom-2 right-2">
-            <div className="w-4 h-4 border-t-2 border-b-2 border-red-900 rounded-full animate-spin"></div>
-          </div>
-        )}
+        <div className="text-white/90 bg-black/50 p-2.5 rounded-lg break-words mt-0.5 relative group flex-grow">
+          <span>{message.comment}</span>
+          
+          {/* Moderation indicator */}
+          {showModeration && message.moderation == undefined && (
+            <div className="absolute bottom-2 right-2">
+              <div className="w-4 h-4 border-t-2 border-b-2 border-red-900 rounded-full animate-spin"></div>
+            </div>
+          )}
 
-        {showModeration && message.moderation && (
-          <div className="absolute bottom-2 right-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                message.moderation.flagged
-                  ? "bg-rose-500"
-                  : "bg-emerald-500"
-              }`}
-              title={
-                message.moderation.flagged
-                  ? "Flagged Content"
-                  : "Safe Content"
-              }
-            ></div>
-          </div>
-        )}
+          {showModeration && message.moderation && (
+            <div className="absolute bottom-2 right-2">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  message.moderation.flagged
+                    ? "bg-rose-500"
+                    : "bg-emerald-500"
+                }`}
+                title={
+                  message.moderation.flagged
+                    ? "Flagged Content"
+                    : "Safe Content"
+                }
+              ></div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Moderation Results */}
@@ -299,14 +310,23 @@ const ChatMessage = ({
                 </svg>
                 AI RESPONSE
               </p>
-              <p className="text-sm text-white/80 italic">
-              <button onClick={() => speak(message.suggestedResponse)}>Speak</button>
-              <Markdown 
-                remarkPlugins={[remarkGfm, remarkMath]} 
-                rehypePlugins={[rehypeKatex]}
-              >{message.suggestedResponse}</Markdown>
-                
-              </p>
+              <div className="flex items-start">
+                <button 
+                  onClick={() => speak(message.suggestedResponse)}
+                  className="flex-shrink-0 inline-flex items-center justify-center text-white bg-emerald-500 hover:bg-emerald-600 transition-colors focus:outline-none mr-2 p-1 rounded-full"
+                  title="Play response"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div className="text-sm text-white/80 italic relative group flex-grow">
+                  <Markdown 
+                    remarkPlugins={[remarkGfm, remarkMath]} 
+                    rehypePlugins={[rehypeKatex]}
+                  >{message.suggestedResponse}</Markdown>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>
