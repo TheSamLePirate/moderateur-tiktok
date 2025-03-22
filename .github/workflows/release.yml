@@ -63,14 +63,14 @@ jobs:
         
         if [ "$LAST_TAG" = "none" ]; then
           # No previous tags, use all commits
-          COMMITS=$(git log --pretty=format:"\n* %s (%h)" --no-merges)
+          COMMITS=$(git log --pretty=format:"%s (%h)" --no-merges)
         else
           # Get commits since last tag
-          COMMITS=$(git log --pretty=format:"\n* %s (%h)" $LAST_TAG..HEAD --no-merges)
+          COMMITS=$(git log --pretty=format:"%s (%h)" $LAST_TAG..HEAD --no-merges)
         fi
         
         # Escape newlines for GitHub Actions
-        CHANGELOG="${COMMITS}"
+        CHANGELOG="${COMMITS//$'\n'/'%0A'}"
         echo "CHANGELOG<<EOF" >> $GITHUB_ENV
         echo "$CHANGELOG" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
