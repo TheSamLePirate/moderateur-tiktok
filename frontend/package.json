@@ -22,7 +22,9 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "youtube-search": "^1.1.6",
+    "youtube-search-api": "^1.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

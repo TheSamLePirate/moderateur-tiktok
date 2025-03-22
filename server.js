@@ -544,6 +544,7 @@ async function generateResponseWithOpenAI(text, apiKey = null, tavilyApiKey = nu
                 instructions: systemPrompt
             });
             console.log(response.output_text);
+            //await PasteAndEnter(response.output_text);
             return response.output_text;
         }
     } catch (error) {
@@ -917,12 +918,14 @@ const calculateCost=async(usage)=>{
     return cost;
 }
 
-const testPasteAndEnter=async(text)=>{
+
+
+const PasteAndEnter=async(text)=>{
     const pythonScript =`import pyperclip
 import pyautogui
 import time
 time.sleep(2)
-pyperclip.copy("${text}")
+pyperclip.copy('${text}')
 pyautogui.hotkey('command', 'v',interval=0.25)
 time.sleep(0.1)
 pyautogui.press('enter')`;
@@ -964,7 +967,7 @@ pyautogui.press('enter')`;
     });
 }
 
-// testPasteAndEnter("The thext has to be copied and pasted").then(() => {
+// testawait PasteAndEnter("The thext has to be copied and pasted").then(() => {
 //     console.log("Text pasted and enter pressed successfully");
 // }).catch(err => {
 //     console.error("Failed to paste text and press enter:", err);

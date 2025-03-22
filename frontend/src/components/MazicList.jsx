@@ -41,6 +41,17 @@ const MazicList = ({
       });
   };
 
+  // Function to search YouTube for message content
+  const searchYouTube = (message) => {
+    let searchQuery = typeof message === 'object' ? message.text : message;
+    // Extract just the message content after the colon
+    searchQuery = searchQuery.split(':')[1].trim();
+    // Encode the search query for URL
+    const encodedQuery = encodeURIComponent(searchQuery);
+    // Open YouTube search in a new tab
+    window.open(`https://www.youtube.com/results?search_query=${encodedQuery}`, '_blank');
+  };
+
   // Handle prefix edit
   const handlePrefixEdit = () => {
     setIsEditingPrefix(true);
@@ -213,6 +224,16 @@ const MazicList = ({
                   <div className="flex justify-between items-start gap-2">
                     <p className={messageStyles}>{messageText}</p>
                     <div className="flex items-center gap-1 opacity-1 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => searchYouTube(message)}
+                        className="p-1 rounded bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white transition-colors"
+                        aria-label="Search on YouTube"
+                        title="Search on YouTube"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                        </svg>
+                      </button>
                       <button 
                         onClick={() => copyToClipboard(message, index)}
                         className="p-1 rounded bg-gray-700 hover:bg-indigo-600 text-gray-300 hover:text-white transition-colors"
