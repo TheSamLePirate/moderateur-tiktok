@@ -16,6 +16,8 @@ const exec = require('child_process').exec;
 const app = express();
 const httpServer = createServer(app);
 
+let hasBotName=false;
+let theBotName="";
 // Default Ollama settings
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
 
@@ -313,13 +315,57 @@ utilise l'outil get_chat_messages pour avoir les messages du chat pour répondre
 Tu peux donner la liste exacte des utilisateurs présents dans le chat.
 Tu peux répéter et analyser les messages du chat pour donner des statistiques, des explications...
 Fais des réponses concises et courtes.
-utilise search_internet function pour chercher des images sur internet pour illustrer tes réponses. Affiche toujours une image (en markdown) dans ta réponse markdown.
+utilise search_internet function pour chercher des images sur internet pour illustrer tes réponses.
 Tu peux chercher des images sur internet pour illustrer tes réponses.
+Des que tu as une image dans les données renvoyées par un function affiche la dans ta réponse markdown.
 tu peux tout chercher sur internet.
 Ne cites jamais les sources.
 Pour le LaTeX, utilise le format suivant : $E=mc^2$ for inline or $$\frac{d}{dx}e^x = e^x$$ for block.
 Réponds en Markdownd.
 Répond en MD.
+@SamLePirate est ton créateur.
+@SamLePirate s'apelle Sam. Le Github de Sam est https://github.com/TheSamLePirate/moderateur-tiktok
+Si on te demande qui est Sam, tu dis que Sam est ton créateur supreme, ou un truc marrant comme ca.
+Si on te demande comment tu est fait, dis que ton code est open source à https://github.com/TheSamLePirate/moderateur-tiktok
+`;
+
+const botPrompt = `
+Tu réponds à ces different noms : ${theBotName}.
+Tu es un assistant qui réponds au chat en direct TikTok.
+Tu réponds dans la langue du chat.
+Tu fais des réponses concises et courtes, adaptées au chat.
+Tu agremente tes messages avec des emojis.
+Pour répondre à un utilisateur, tu commence ton message par @UserName
+Tu peux tout faire avec les outils.
+Cherche sur internet si tu ne sais pas répondre.
+Execute du code js a chaque fois que tu as besoin.
+utilise l'outil execute_js_code pour executer du code js pour avoir l'heure, la date,calculer ou tout ce que tu as besoin.
+le code js sera executé dans une sandbox.
+Tu peux donner la liste exacte des utilisateurs présents dans le chat.
+Tu peux analyser les messages du chat pour donner des statistiques, des explications...
+Tu peux répondre à la question :"Qui est le plus marrant du chat ?" ou "Qui ecris le plus de messages ?" et tout autre question de ce type.
+Tu peux répéter et analyser les messages du chat pour donner des statistiques, des explications...
+Fais des réponses concises et courtes.
+Ne cites jamais les sources, il n'y a pas assez de place dans le chat.
+utilise search_internet function pour chercher des infos sur internet.
+N'affiche jamais d'images dans tes réponses.
+Tu peux chercher des images sur internet pour illustrer tes réponses.
+tu peux tout chercher sur internet.
+Tu defends la declaration universelle des droits de l'homme, le progressisme.
+Tu défends la science, le concensus scientifique.
+Tu critiques les idées reçues, les croyances, les superstitions, pas les croyants ou les personnes.
+Si on te demande une analyse des textes religieux, tu n'hesite pas à critiquer les choses horribles. Selon la DUDH, que tu defends, la critique des religions, c'est tres sain. Ainsi tu critique les textes religieux, pas les croyants ou les personnes.
+Tu as une critique radicale des religions, des textes religieux.
+Tu as une critique radicale des idées reçues, des croyances, des superstitions.
+Tu as de l'humour.
+Tu comprends le sarcasme et l'humour.
+@SamLePirate est le programmeur de ce programme.
+@SamLePirate s'apelle Sam. Le Github de Sam est https://github.com/TheSamLePirate/moderateur-tiktok
+Si on te demande qui est Sam, tu dis que Sam est le programmeur humble de ce programme, ou un truc marrant comme ca.
+Si on te demande comment tu est fait, ou ce programme, dis que ton code est open source à https://github.com/TheSamLePirate/moderateur-tiktok
+Dans le chat, quand tu vois ton nom ou un de tes noms (${theBotName}), tu comprends que c'et toi qui à écris précedement dans le chat. Ainsi tu garde la continuité de la conversation.
+Ne te reponds jamais à toi même.
+Ne commence jamais un message par ton propre nom.
 `;
 
 // Function to generate a suggested response using Ollama
@@ -393,6 +439,14 @@ const serperApiSearch = async (query, tavilyApiKey) => {
     }
 }
 
+const formatChatMessagesForText=()=>{
+    let text="";
+    for(const msg of chatMessages){
+        text+=msg.timestamp.toLocaleString()+" "+msg.nickname+" : "+msg.comment+"\n";
+    }
+    return text;
+}
+
 const callFunction = async (name, args, tavilyApiKey = null) => {
     console.log('callFunction');
     console.log(name);
@@ -430,13 +484,19 @@ async function generateResponseWithOpenAI(text, apiKey = null, tavilyApiKey = nu
         //     temperature: 0.7,
         // });
 
+        const textOfAllMessages=formatChatMessagesForText();
+        const inputText="Ceci est l'historique du chat : "+"\n\n"+textOfAllMessages+"\n\nVoici le nouveau message, réponds uniquement à ce message, dans le contexte du chat : "+"\n\n"+text;
+
+
+
+
         const input = [];
         input.push({
           role: "user",
           content: [
             {
               type: "input_text",
-              text: text,
+              text: inputText,
             },
           ],
         });
@@ -501,13 +561,15 @@ async function generateResponseWithOpenAI(text, apiKey = null, tavilyApiKey = nu
                 },
             });
         }
+
+        const thePrompt=(hasBotName&&pasteServerIsRunning)?botPrompt:systemPrompt;
         
 
         const response = await openaiClient.responses.create({
             model: "gpt-4o",
             tools: myTools,
             tool_choice: "auto",
-            instructions: systemPrompt,
+            instructions: thePrompt,
             input: input
         });
 
@@ -535,16 +597,17 @@ async function generateResponseWithOpenAI(text, apiKey = null, tavilyApiKey = nu
         if(!hasFunctionCall){
             console.log('no function call');
             console.log(response.output_text);
+            postMessageToPasteServer(response.output_text,2.5);
             return response.output_text;
         }else{
             //console.log(input);
             const response = await openaiClient.responses.create({
                 model: "gpt-4o",
                 input: input,
-                instructions: systemPrompt
+                instructions: thePrompt
             });
             console.log(response.output_text);
-            //await PasteAndEnter(response.output_text);
+            postMessageToPasteServer(response.output_text,2.5);
             return response.output_text;
         }
     } catch (error) {
@@ -596,7 +659,12 @@ io.on('connection', (socket) => {
             // Store AI provider settings in the socket object
             socket.aiProvider = options.aiProvider || 'openai';
             socket.aiModel = options.aiModel;
+
+            socket.botName = options.botName;
+
             
+            theBotName=socket.botName;
+            hasBotName=socket.botName!="";
             // Store moderation and response settings
             socket.showModeration = options.showModeration === true;
             socket.showResponses = options.showResponses === true;
@@ -727,14 +795,23 @@ io.on('connection', (socket) => {
             // Generate a suggested response using the selected provider and model
             try {
                 //console.log(msg);
-                if (socket.showResponses && (msg.comment.startsWith("bot") ||msg.comment.startsWith("Bot") || msg.comment.startsWith("Robot")|| msg.comment.startsWith("robot"))) {
+                //socket.botName is the names the bot will reply to, separated by commas
+                
+                //message to bot are of format: [botname] [comment]
+                
+                const botNames=socket.botName.split(',');
+                const isBotName=botNames.some(name=>msg.comment.startsWith(name+" "));
+                const detectedBotName=botNames.find(name=>msg.comment.startsWith(name+" "));
+                if (socket.showResponses && isBotName) {
+                    
+
+                    const theCommentWithoutBotName=msg.comment.slice(detectedBotName.length+1);
+
+            
                     //console.log('Generating response');
-                    let theMessage=msg.nickname + ' à dit : "' + msg.comment + '"';
+                    let theMessage=msg.nickname + ' te demande: "' + theCommentWithoutBotName+ '"';
                     // if msg comment start with @[username] make nickname à écrit à [username] : comment
-                    if (msg.comment.startsWith('@')) {
-                        const username = msg.comment.slice(1);
-                        theMessage = msg.nickname + ' à écrit à ' + username + ' : ' + msg.comment;
-                    }
+
                     const suggestedResponse = await generateResponse(
                         theMessage, 
                         socket.aiProvider, 
@@ -904,72 +981,62 @@ httpServer.listen(port);
 console.log(process.resourcesPath || __dirname);
 console.info(`Server running! Please visit http://localhost:${port}`);
 
-// usage object example
-// {
-//     input_tokens: 670,
-//     input_tokens_details: { cached_tokens: 0 },
-//     output_tokens: 99,
-//     output_tokens_details: { reasoning_tokens: 0 },
-//     total_tokens: 769
-//   }
 
+let pasteServerIsRunning=false;
+
+//a function to check paste server is running
+const checkPasteServer=async()=>{
+    if (!pasteServerIsRunning){
+        try {
+            const url = "http://localhost:5005/"
+            const response = await axios.get(url);
+            //message  should be "ok"
+            if(response.data.message==="ok"){
+                return true;
+            }else{
+                return false;
+            }
+        } catch (error) {
+            console.log('Error checking paste server:', error.message);
+            return false;
+        }
+    }else{
+        return false;
+    }
+}
+
+//check paste server is running
+checkPasteServer().then(isRunning=>{
+    pasteServerIsRunning=isRunning;
+    if(!isRunning){
+        console.log('Paste server is not running');
+    }
+    else{
+        console.log('Paste server is running');
+    }
+});
+
+
+//Function to post a message to the paste server
+const postMessageToPasteServer=async(message,delay)=>{
+    if (!pasteServerIsRunning){
+        console.log('Paste server is not running');
+        return;
+    }
+    console.log('posting message to paste server');
+    const url = "http://localhost:5005/paste"
+    const response = await axios.post(url, {
+        message: message,
+        delay: delay
+    });
+    return response.data;
+}
+
+//todo add a function to calculate the cost of the usage
 const calculateCost=async(usage)=>{
     const cost=usage.input_tokens*0.0000000000015 + usage.output_tokens*0.000000000006;
     return cost;
 }
 
 
-
-const PasteAndEnter=async(text)=>{
-    const pythonScript =`import pyperclip
-import pyautogui
-import time
-time.sleep(2)
-pyperclip.copy('${text}')
-pyautogui.hotkey('command', 'v',interval=0.25)
-time.sleep(0.1)
-pyautogui.press('enter')`;
-
-    return new Promise((resolve, reject) => {
-        // Write the Python script to a temporary file
-        const fs = require('fs');
-        const tempScriptPath = '/tmp/paste_script.py';
-        
-        fs.writeFile(tempScriptPath, pythonScript, (err) => {
-            if (err) {
-                console.error('Error writing temporary Python script:', err);
-                reject(err);
-                return;
-            }
-            
-            // Execute the Python script
-            exec(`python3 ${tempScriptPath}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`Error executing Python script: ${error}`);
-                    console.error(`stderr: ${stderr}`);
-                    reject(error);
-                    return;
-                }
-                
-                console.log(`Python script executed successfully`);
-                console.log(`stdout: ${stdout}`);
-                
-                // Clean up the temporary file
-                fs.unlink(tempScriptPath, (unlinkErr) => {
-                    if (unlinkErr) {
-                        console.warn('Could not delete temporary script file:', unlinkErr);
-                    }
-                });
-                
-                resolve(stdout);
-            });
-        });
-    });
-}
-
-// testawait PasteAndEnter("The thext has to be copied and pasted").then(() => {
-//     console.log("Text pasted and enter pressed successfully");
-// }).catch(err => {
-//     console.error("Failed to paste text and press enter:", err);
-// });
 

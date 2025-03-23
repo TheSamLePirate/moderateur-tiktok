@@ -78,9 +78,11 @@
     ]
   },
   "dependencies": {
+    "@deepgram/sdk": "^3.11.2",
     "@tavily/core": "^0.3.2",
     "axios": "^1.8.2",
-    "dotenv": "^16.0.0",
+    "cross-fetch": "^4.1.0",
+    "dotenv": "^16.4.7",
     "express": "^4.17.2",
     "openai": "^4.86.2",
     "socket.io": "^4.4.1",

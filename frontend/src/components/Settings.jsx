@@ -8,6 +8,7 @@ const Settings = ({
   enableFlvStream, setEnableFlvStream,
   enableMentionNotifications, setEnableMentionNotifications,
   yourUsername, setYourUsername,
+  botName, setBotName,
   aiProvider, setAiProvider,
   aiModel, setAiModel,
   openaiApiKey, setOpenaiApiKey,
@@ -266,6 +267,23 @@ const Settings = ({
               />
             </div>
             <p className="mt-1.5 text-xs text-gray-500">Used for detecting when someone mentions you in chat</p>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={botName} 
+                onChange={(e) => {
+                  let botname = e.target.value.trim();                  
+                  setBotName(botname);
+                  if (botname) {
+                    localStorage.setItem('botName', botname);
+                  } else {
+                    localStorage.removeItem('botName');
+                  }
+                }} 
+                className="w-full pl-8 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all duration-200"
+                placeholder="The name the bot will reply to."
+              />
+            </div>
           </div>
           
           <div className="bg-gray-800/60 rounded-xl border border-gray-700/70 hover:border-gray-600/80 transition-colors p-4">

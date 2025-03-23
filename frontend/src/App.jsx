@@ -25,6 +25,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [username, setUsername] = useState('')
+  const [botName, setBotName] = useState('')
   const [error, setError] = useState('')
   const [sessionId, setSessionId] = useState('')
 
@@ -118,6 +119,8 @@ function App() {
     // If running from file://, use the demo backend
     
     connectionRef.current = new TikTokConnection(undefined);
+
+    console.log("Connection ref: "+connectionRef.current.RoomMessage);
     
     // Set up the Ollama models listener immediately when connection is initialized
     connectionRef.current.on('ollamaModels', (models) => {
@@ -163,6 +166,7 @@ function App() {
         loadSetting('enableMentionNotifications', setEnableMentionNotifications, true);
         loadSetting('enableFlvStream', setEnableFlvStream, true);
         loadSetting('tiktokUsername', setYourUsername, '');
+        loadSetting('botName', setBotName, '');
         loadSetting('openaiApiKey', setOpenaiApiKey, '');
         loadSetting('tavilyApiKey', setTavilyApiKey, '');
         loadSetting('aiProvider', setAiProvider, 'openai');
@@ -209,6 +213,7 @@ function App() {
         loadSetting('enableMentionNotifications', setEnableMentionNotifications, true);
         loadSetting('enableFlvStream', setEnableFlvStream, true);
         loadSetting('tiktokUsername', setYourUsername, '');
+        loadSetting('botName', setBotName, '');
         loadSetting('openaiApiKey', setOpenaiApiKey, '');
         loadSetting('tavilyApiKey', setTavilyApiKey, '');
         loadSetting('aiProvider', setAiProvider, 'openai');
@@ -274,7 +279,8 @@ function App() {
         showResponses: showAIResponses,
         openaiApiKey: aiProvider === 'openai' ? openaiApiKey : undefined,
         tavilyApiKey: aiProvider === 'openai' ? tavilyApiKey : undefined,
-        sessionId: sessionId
+        sessionId: sessionId,
+        botName: botName
       })
       
       setIsConnected(true)
@@ -1062,6 +1068,8 @@ function App() {
                 setEnableMentionNotifications={setEnableMentionNotifications}
                 yourUsername={yourUsername}
                 setYourUsername={setYourUsername}
+                botName={botName}
+                setBotName={setBotName}
                 aiProvider={aiProvider}
                 setAiProvider={setAiProvider}
                 aiModel={aiModel}
@@ -1126,6 +1134,7 @@ function App() {
                     autoScroll={autoScroll}
                     setAutoScroll={setAutoScroll}
                     isGeneratingResponse={isGeneratingResponse}
+                    botNames={botName}
                   />
                 </div>
                 <div className="lg:col-span-1">

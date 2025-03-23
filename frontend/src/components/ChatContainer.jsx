@@ -8,7 +8,8 @@ const ChatContainer = ({
   addToFriendsList, 
   addToUndesirablesList,
   autoScroll,
-  setAutoScroll
+  setAutoScroll,
+  botNames
 }) => {
   const chatContainerRef = useRef(null)
   const [search, setSearch] = useState('')
@@ -216,6 +217,7 @@ const ChatContainer = ({
                   showAIResponses={showAIResponses}
                   addToFriendsList={addToFriendsList}
                   addToUndesirablesList={addToUndesirablesList}
+                  botNames={botNames}
                 />
               </div>
             ))}

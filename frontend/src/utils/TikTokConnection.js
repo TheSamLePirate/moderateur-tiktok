@@ -11,6 +11,8 @@ class TikTokConnection {
         this.options = null;
         this.streamUrl = null;
         this.isConnected = false;
+        this.RoomPrompt=null;
+        this.RoomMessage=null;
 
         this.socket.on('connect', () => {
             console.info("Socket connected!");
@@ -54,6 +56,15 @@ class TikTokConnection {
 
                 console.log('Connected to room', state.roomId);
                 console.log(state);
+
+                console.log(data);
+                if(state.roomInfo){
+                    console.log(state.roomInfo);
+                    if(state.roomInfo.message && state.roomInfo.prompt){
+                        this.RoomPrompt=state.roomInfo.prompt;
+                        this.RoomMessage=state.roomInfo.message;
+                    }
+                }
                 // Store stream URL if available
                 if (state.roomInfo && state.roomInfo.stream_url && state.roomInfo.stream_url.flv_pull_url) {
                     this.streamUrl = state.roomInfo.stream_url.flv_pull_url;

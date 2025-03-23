@@ -56,13 +56,18 @@ const ChatMessage = ({
   showModeration,
   showAIResponses,
   addToFriendsList,
-  addToUndesirablesList 
+  addToUndesirablesList,
+  botNames 
 }) => {
   const [showActions, setShowActions] = useState(false)
   const [showReasonModal, setShowReasonModal] = useState(false)
   const [reasonText, setReasonText] = useState('')
 
-
+  const isBot=(message)=>{
+    const botNamesList=botNames.split(',');
+    const isBotName=botNamesList.some(name=>message.comment.startsWith(name)+" ");
+    return isBotName;
+  }
   const openai_api_key = localStorage.getItem('openaiApiKey')
   const openai = new OpenAI({
     apiKey: openai_api_key,
@@ -286,7 +291,7 @@ const ChatMessage = ({
       )}
 
       {/* AI Response */}
-      {showAIResponses && (message.comment.startsWith("Bot") || message.comment.startsWith("Robot") || message.comment.startsWith("bot") || message.comment.startsWith("robot") )&& (
+      {showAIResponses && isBot(message) && (
         <div className="mt-2">
           {message.pendingResponse ? (
             <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm animate-pulse">
