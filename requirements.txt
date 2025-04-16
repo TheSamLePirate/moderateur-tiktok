@@ -1,5 +1,0 @@
-TikTokLive==5.0.6
-protobuf>=3.20.0,<4.0.0
-httpx>=0.23.0,<0.25.0
-websockets>=10.4,<11.0
-asyncio>=3.4.3 

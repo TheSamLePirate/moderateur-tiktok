@@ -180,7 +180,7 @@ const ChatContainer = ({
       </div>
       
       <div 
-        className="flex-1 overflow-y-auto  scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
+        className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
         ref={chatContainerRef}
         style={{ 
           scrollbarWidth: 'thin',
@@ -205,7 +205,7 @@ const ChatContainer = ({
             <p className="text-xs mt-1">No nicknames match "{search}"</p>
           </div>
         ) : (
-          <div className="space-y-0">
+          <div className="space-y-2">
             {filteredMessages.map((msg, index) => (
               <div 
                 key={`msg-${index}-${index}`}
@@ -267,7 +267,7 @@ const ChatContainer = ({
               <span className={`text-sm ${showJoinMessages ? 'text-pink-400' : 'text-gray-400'} group-hover:text-white transition-colors`}>Show joins</span>
             </label>
           </div>
-          {/* <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
           <button
             onClick={exportToCSV}
             className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
@@ -278,7 +278,7 @@ const ChatContainer = ({
             </svg>
             Export CSV
           </button>
-          </div> */}
+          </div>
           
           {!autoScroll && (
             <button 

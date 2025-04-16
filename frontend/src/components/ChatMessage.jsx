@@ -64,11 +64,8 @@ const ChatMessage = ({
   const [reasonText, setReasonText] = useState('')
 
   const isBot=(message)=>{
-    if (message.comment.startsWith(botNames+" ")){
-      return true;
-    }
     const botNamesList=botNames.split(',');
-    const isBotName=botNamesList.some(name=>message.comment.startsWith(name+" "));
+    const isBotName=botNamesList.some(name=>message.comment.startsWith(name)+" ");
     return isBotName;
   }
   const openai_api_key = localStorage.getItem('openaiApiKey')
@@ -218,15 +215,22 @@ const ChatMessage = ({
   return (
     <div
       className={getMessageContainerStyles()}
-      onMouseEnter={() => setShowActions(false)}
+      onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
       {/* Header with user info and timestamp */}
-      
+      <div className="flex justify-between items-center mb-1.5">
+        <div className="flex items-center">
+          <UserDataDisplay message={message} />
+        </div>
+        <span className="text-xs text-gray-500 ml-2">
+          {formatTimestamp(message.timestamp)}
+        </span>
+      </div>
 
       {/* Message content with play button to the left */}
       <div className="flex items-start">
-        {/* <button 
+        <button 
           onClick={() => speak(message.comment)}
           className="absolute z-50 top-15 left-1 flex-shrink-0 inline-flex items-center justify-center text-emerald-500 hover:text-emerald-300 transition-colors focus:outline-none mr-2 p-1 rounded-full"
           title="Play text"
@@ -234,11 +238,9 @@ const ChatMessage = ({
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
           </svg>
-        </button> */}
+        </button>
         
-        {formatTimestamp(message.timestamp)}
-        <UserDataDisplay message={message} />
-        
+        <div className="text-white/90 bg-black/50 p-2.5 rounded-lg break-words mt-0.5 relative group flex-grow">
           <span>{message.comment}</span>
           
           {/* Moderation indicator */}
@@ -248,7 +250,7 @@ const ChatMessage = ({
             </div>
           )}
 
-          {/* {showModeration && message.moderation && (
+          {showModeration && message.moderation && (
             <div className="absolute bottom-2 right-2">
               <div
                 className={`w-3 h-3 rounded-full ${
@@ -263,7 +265,8 @@ const ChatMessage = ({
                 }
               ></div>
             </div>
-          )} */}
+          )}
+        </div>
       </div>
 
       {/* Moderation Results */}

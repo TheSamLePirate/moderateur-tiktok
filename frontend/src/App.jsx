@@ -1015,7 +1015,7 @@ function App() {
       />
       
       {/* Toggle button for user lists */}
-      {/* <button 
+      <button 
         id="toggleUserLists" 
         className="fixed top-4 left-4 z-50 flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
         onClick={toggleUserLists}
@@ -1024,7 +1024,7 @@ function App() {
           <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
         </svg>
         Gérer les listes
-      </button> */}
+      </button>
       
       {/* User Lists Panel */}
       <UserLists 
@@ -1113,19 +1113,18 @@ function App() {
       </header>
       
       {isConnected && (
-        <main className="container-fluid px-4 py-6">
-          <div className="grid grid-cols-1 gap-6">
-            <div className="space-y-6">
-              {/* <VideoPlayer 
+        <main className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3 space-y-6">
+              <VideoPlayer 
                 username={username}
                 enableFlvStream={enableFlvStream}
                 connectionRef={connectionRef}
                 openaiApiKey={openaiApiKey}
-              /> */}
+              />
               
-              
-              <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-                <div className="lg:col-span-1">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
                   <ChatContainer 
                     chatMessages={chatMessages}
                     showModeration={showModeration}
@@ -1138,7 +1137,7 @@ function App() {
                     botNames={botName}
                   />
                 </div>
-                {/* <div className="lg:col-span-1">
+                <div className="lg:col-span-1">
             <MazicList 
                 mazicList={mazicList} 
                 clearMazicList={clearMazicList} 
@@ -1146,19 +1145,19 @@ function App() {
                 mazicPrefix={mazicPrefix}
                 setMazicPrefix={updateMazicPrefix}
               />
-              </div> */}
+              </div>
               </div>
             </div>
             
             
-            {/* <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-6">
               {showModeration && (
                 <ModerationStats moderationStats={moderationStats} />
               )}
               
               <TopLikers likers={likes} />
               <GiftsContainer gifts={gifts} />
-            </div> */}
+            </div>
           </div>
         </main>
       )}
