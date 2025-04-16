@@ -86,7 +86,14 @@ def analyse_comment(commentList,allComments):
 async def on_connect(event: ConnectEvent):
     global channel  # Reference the global channel variable
     print(f"Connected to @{event.unique_id} (Room ID: {event.room_id})")
-    
+    #print each key in the event. Show each key if it is a dict
+    for key in event.__dict__:
+        if isinstance(getattr(event, key), dict):
+            print(f"{key}:")
+            for subkey in getattr(event, key).__dict__:
+                print(f"  {subkey}: {getattr(getattr(event, key), subkey)}")
+        else:
+            print(f"{key}: {getattr(event, key)}")
     # Display a test notification on startup
     notification_title = "TikTok Moderator - Connected"
     notification_message = f"Successfully connected to {channel}\nReady to monitor comments"
@@ -97,7 +104,21 @@ async def on_comment(event: CommentEvent) -> None:
     global notFirstTime
     global allComments
     commentList = []
-    print(f"{event.user.nickname} -> {event.comment}")
+    #show the full event
+    print("Event keys:")
+    for key in event.__dict__:
+        print(f"{key}: {getattr(event, key)}")
+
+    print(event.user_info)
+    #show attributes of event.user_info
+    for key in event.user_info.__dict__:
+        print(f"{key}: {getattr(event.user_info, key)}")
+
+    print(event.user_info.username)
+    print(event.user_info.nick_name)
+    print(event.content)
+    return
+    #print(f"{event.user.nickname} -> {event.comment}")
     if notFirstTime:
         allComments.append({"username": event.user.nickname, "message": event.comment})
         # on ne garde que les 100 derniers commentaires
