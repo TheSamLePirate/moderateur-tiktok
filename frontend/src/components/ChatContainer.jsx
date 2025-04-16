@@ -1,5 +1,6 @@
 import { useEffect, useRef,useState } from 'react'
 import ChatMessage from './ChatMessage'
+import StatsBar from './StatsBar'
 
 const ChatContainer = ({ 
   chatMessages, 
@@ -9,7 +10,10 @@ const ChatContainer = ({
   addToUndesirablesList,
   autoScroll,
   setAutoScroll,
-  botNames
+  botNames,
+  viewerCount,
+  likeCount,
+  diamondsCount
 }) => {
   const chatContainerRef = useRef(null)
   const [search, setSearch] = useState('')
@@ -159,20 +163,24 @@ const ChatContainer = ({
         `}
       </style>
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700">
-        <h3 className="text-lg font-bold text-white flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-pink-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-          </svg>
-          Live Chat
-        </h3>
+      
         <div>
-          <input type="text" placeholder="Search" className="rounded-full bg-gray-800 text-white px-4 py-2" value={search} onChange={(e) => setSearch(e.target.value)} />
+        
+
+          <input type="text" placeholder="Search" className="rounded-full bg-gray-800 text-white px-4 py-2 border border-gray-700" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+          {viewerCount} viewers
+          </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+          {likeCount} likes
+          </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+          {diamondsCount} Diamonds
+          </span>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
-            <span className="w-2 h-2 mr-1.5 rounded-full bg-green-500 animate-pulse"></span>
-            Live
-          </span>
+          
+          
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
             {search.trim() !== '' ? `${filteredMessages.length}/${chatMessages.filter(msg => msg.type !== 'join').length}` : chatMessages.filter(msg => msg.type !== 'join').length} messages
           </span>

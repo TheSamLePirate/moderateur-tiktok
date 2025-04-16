@@ -222,9 +222,21 @@ const UserDataDisplay = ({ message, size = 'normal', showNickname = true }) => {
         </a>
 
         <span>
-          {message.type === 'join' && (
+          {message.type === 'join' ? (
             <div className="text-white/90  p-2.5 rounded-lg break-words">
               a rejoint
+            </div>
+          ):(
+            <div className="text-white/90  p-2.5 rounded-lg break-words">
+               {message.comment}
+            </div>
+          )}
+        </span>
+
+        <span>
+          {message.type === 'message' && (
+            <div className="text-white/90  p-2.5 rounded-lg break-words">
+              {message.comment}
             </div>
           )}
         </span>

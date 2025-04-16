@@ -111,14 +111,14 @@ const ChatMessage = ({
   
   // Get message container styles
   const getMessageContainerStyles = () => {
-    let baseStyles = 'relative p-3 rounded-xl mb-2 transition-all duration-200 group'
+    let baseStyles = 'relative transition-all duration-200 group'
     
     if (message?.userStatus?.isFriend) {
-      return `${baseStyles} bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15`
+      return `${baseStyles} bg-emerald-500/10 hover:bg-emerald-500/15`
     } else if (message?.userStatus?.isUndesirable) {
-      return `${baseStyles} bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/15`
+      return `${baseStyles} bg-rose-500/10  hover:bg-rose-500/15`
     } else {
-      return `${baseStyles} bg-gray-800/60 border border-gray-700/50 hover:bg-gray-800/80`
+      return `${baseStyles} bg-gray-800/60  hover:bg-gray-800/80`
     }
   }
   
@@ -153,18 +153,15 @@ const ChatMessage = ({
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        <div className="py-1.5 text-sm flex justify-between items-center">
+        <div className=" pl-2 flex justify-between items-center">
           <UserDataDisplay message={message} />
-      
-          <span className="text-xs text-gray-500 ml-2">
-            {formatTimestamp(message.timestamp)}
-          </span>
+    
         </div>
 
         
         
         {/* User Actions */}
-        <div className={`absolute -right-1 -top-1 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0'}`}>
+        {/* <div className={`absolute -right-1 -top-1 transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0'}`}>
           <div className="flex bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden">
             <button 
               onClick={() => addToFriendsList(message)}
@@ -185,7 +182,7 @@ const ChatMessage = ({
               </svg>
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Reason Modal */}
         <ReasonModal 
@@ -225,7 +222,7 @@ const ChatMessage = ({
       
 
       {/* Message content with play button to the left */}
-      <div className="flex items-start">
+      <div className="flex items-start pl-2">
         {/* <button 
           onClick={() => speak(message.comment)}
           className="absolute z-50 top-15 left-1 flex-shrink-0 inline-flex items-center justify-center text-emerald-500 hover:text-emerald-300 transition-colors focus:outline-none mr-2 p-1 rounded-full"
@@ -236,10 +233,10 @@ const ChatMessage = ({
           </svg>
         </button> */}
         
-        {formatTimestamp(message.timestamp)}
+        
         <UserDataDisplay message={message} />
         
-          <span>{message.comment}</span>
+          {/* <p>{message.comment}</p> */}
           
           {/* Moderation indicator */}
           {showModeration && message.moderation == undefined && (

@@ -1084,20 +1084,8 @@ function App() {
             </div>
           ) : (
             <div className="flex flex-col md:flex-row justify-between">
-              <div className="flex justify-around p-4 my-3 bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-md rounded-2xl shadow-lg border border-gray-700/30">
-
-                <h2 className="text-xl font-semibold text-white flex items-center">
-                  <span className="mr-2">Connecté à:</span>
-                  <span className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full">
-                    @{username}
-                  </span>
-                </h2>
-              </div>
-              <StatsBar 
-                viewerCount={viewerCount}
-                likeCount={likeCount}
-                diamondsCount={diamondsCount}
-              />
+              
+             
               <div className="flex justify-around p-4 my-3">
 
                 <button 
@@ -1136,6 +1124,9 @@ function App() {
                     setAutoScroll={setAutoScroll}
                     isGeneratingResponse={isGeneratingResponse}
                     botNames={botName}
+                    viewerCount={viewerCount}
+                    likeCount={likeCount}
+                    diamondsCount={diamondsCount}
                   />
                 </div>
                 {/* <div className="lg:col-span-1">
