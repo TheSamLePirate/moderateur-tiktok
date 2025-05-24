@@ -10,15 +10,12 @@ import * as UserApi from './utils/UserApi'
 // Import components
 import ConnectionForm from './components/ConnectionForm'
 import Settings from './components/Settings'
-import StatsBar from './components/StatsBar'
-import VideoPlayer from './components/VideoPlayer'
+
 import ChatContainer from './components/ChatContainer'
-import GiftsContainer from './components/GiftsContainer'
 import UserLists from './components/UserLists'
-import ModerationStats from './components/ModerationStats'
 import Notifications from './components/Notifications'
-import MazicList from './components/MazicList'
-import TopLikers from './components/TopLikers'
+
+import Spectrum from './components/Spectrum'
 
 function App() {
   // Connection state
@@ -38,8 +35,7 @@ function App() {
   
   // Chat & gifts state & likes
   const [chatMessages, setChatMessages] = useState([])
-  const [gifts, setGifts] = useState([])
-  const [likes, setLikes] = useState([])
+  
   
   // AI response state
   const [isGeneratingResponse, setIsGeneratingResponse] = useState(false)
@@ -58,29 +54,13 @@ function App() {
   const [autoScroll, setAutoScroll] = useState(true)
 
   //mazic state
-  const [mazicList, setMazicList] = useState([]);
-  const [mazicPrefix, setMazicPrefix] = useState('mazic:');
+  
   const [allChatMessages, setAllChatMessages] = useState([]); // Store all chat messages to reprocess when prefix changes
   
   // User lists
   const [friendsList, setFriendsList] = useState([])
   const [undesirablesList, setUndesirablesList] = useState([])
-  const [showUserLists, setShowUserLists] = useState(false)
-  
-  // Moderation stats
-  const [moderationStats, setModerationStats] = useState({
-    total: 0,
-    flagged: 0,
-    safe: 0,
-    categories: {
-      harassment: 0,
-      hate: 0,
-      sexual: 0,
-      violence: 0,
-      self_harm: 0,
-      illegal: 0
-    }
-  })
+
   
   // Notifications state
   const [notifications, setNotifications] = useState([])
@@ -172,7 +152,6 @@ function App() {
         loadSetting('aiProvider', setAiProvider, 'openai');
         loadSetting('aiModel', setAiModel, '');
         loadSetting('autoScroll', setAutoScroll, true);
-        loadSetting('mazicPrefix', setMazicPrefix, 'mazic:');
         
         // Apply other settings from API if available
         // ...
@@ -219,7 +198,6 @@ function App() {
         loadSetting('aiProvider', setAiProvider, 'openai');
         loadSetting('aiModel', setAiModel, '');
         loadSetting('autoScroll', setAutoScroll, true);
-        loadSetting('mazicPrefix', setMazicPrefix, 'mazic:');
       }
     };
     
@@ -310,8 +288,7 @@ function App() {
     // Reset all state
     setIsConnected(false)
     setChatMessages([])
-    setGifts([])
-    setLikes([])
+
     setViewerCount(0)
     setLikeCount(0)
     setDiamondsCount(0)
@@ -329,64 +306,9 @@ function App() {
       setViewerCount(data.viewerCount)
     })
     
-    conn.on('like', (data) => {
-      const userStatus = checkUserStatus(data);
-      setLikeCount(prevCount => prevCount + data.likeCount)
-      console.log("Got the like :" + data.likeCount + " from " + data.nickname);
-
-      // Update likes array using setLikes to maintain state properly
-      setLikes(prevLikes => {
-        // Check if user already exists in the likes array
-        const existingLikerIndex = prevLikes.findIndex(liker => liker.uniqueId === data.uniqueId);
-        
-        if (existingLikerIndex !== -1) {
-          // User exists, update their like count
-          const updatedLikes = [...prevLikes];
-          updatedLikes[existingLikerIndex] = {
-            ...updatedLikes[existingLikerIndex],
-            likeCount: updatedLikes[existingLikerIndex].likeCount + data.likeCount,
-            userStatus // Always update the user status with latest
-          };
-          return updatedLikes;
-        } else {
-          // User doesn't exist, add them to the likes array
-
-          //message.followInfo example
-  //followInfo: {followingCount: 1401, followerCount: 409, followStatus: 0, pushStatus: 0}
-
-  //user description example
-  //message.userDetails.bioDescription="..."
-
-  //message.followRole
-  //message.gifterLevel
-  //message.isModerator
-  //message.isSubscriber
-  //message.teamMemberLevel
-  //message.userStatus: {isFriend: false, isUndesirable: false}
-          return [...prevLikes, {
-            ...data,
-            userStatus
-
-          }];
-        }
-      });
-    })
     
-    conn.on('gift', (data) => {
-      if (data.diamondCount > 0) {
-        setDiamondsCount(prevCount => prevCount + data.diamondCount)
-      }
-      
-      // Add gift to the list
-      setGifts(prevGifts => {
-        const newGifts = [...prevGifts, data]
-        // Keep only the most recent 200 gifts
-        if (newGifts.length > 200) {
-          return newGifts.slice(newGifts.length - 200)
-        }
-        return newGifts
-      })
-    })
+    
+   
     
     // Chat messages - now using socket approach
     conn.on('chat', (data) => {
@@ -415,7 +337,6 @@ function App() {
       });
 
       // Process this message with current mazic prefix
-      processMessageWithCurrentPrefix(data);
 
       // Check for mentions
       if (enableMentionNotifications && yourUsername && data.comment.toLowerCase().includes(yourUsername.toLowerCase())) {
@@ -455,10 +376,7 @@ function App() {
                 }
               }
               
-              // Update moderation stats
-              if (update.data.moderation) {
-                updateModerationStats(update.data.moderation)
-              }
+              
               
               return {
                 ...msg,
@@ -566,29 +484,7 @@ function App() {
     }
   }
   
-  const updateModerationStats = (moderationResult) => {
-    setModerationStats(prevStats => {
-      const newStats = {...prevStats}
-      newStats.total += 1
-      
-      if (moderationResult.flagged) {
-        newStats.flagged += 1
-        
-        // Update category counts if available
-        if (moderationResult.categories) {
-          Object.keys(moderationResult.categories).forEach(category => {
-            if (moderationResult.categories[category] && newStats.categories[category] !== undefined) {
-              newStats.categories[category] += 1
-            }
-          })
-        }
-      } else {
-        newStats.safe += 1
-      }
-      
-      return newStats
-    })
-  }
+  
   
   // Load user lists from API
   const loadUserLists = async () => {
@@ -718,52 +614,7 @@ function App() {
     updateChatMessagesStatus(user.uniqueId, {isFriend: false, isUndesirable: true})
   }
   
-  // Remove user from friends list
-  const removeFriend = async (uniqueId) => {
-    try {
-      const response = await UserApi.removeFriend(uniqueId)
-      // API now directly returns the updated array
-      setFriendsList(response || [])
-    } catch (error) {
-      console.error('Error removing friend:', error)
-      
-      // Fallback - remove locally
-      setFriendsList(prevList => {
-        const newList = prevList.filter(item => !(item.uniqueId === uniqueId || item.tiktokId === uniqueId))
-        localStorage.setItem('friendsList', JSON.stringify(newList))
-        return newList
-      })
-    }
 
-    loadUserLists();
-
-    // Update the userStatus for all existing chat messages
-    updateChatMessagesStatus(uniqueId, {isFriend: false, isUndesirable: false})
-  }
-  
-  // Remove user from undesirables list
-  const removeUndesirable = async (uniqueId) => {
-    try {
-      const response = await UserApi.removeUndesirable(uniqueId)
-      // API now directly returns the updated array
-      setUndesirablesList(response || [])
-    } catch (error) {
-      console.error('Error removing undesirable:', error)
-      
-      // Fallback - remove locally
-      setUndesirablesList(prevList => {
-        const newList = prevList.filter(item => !(item.uniqueId === uniqueId || item.tiktokId === uniqueId))
-        localStorage.setItem('undesirablesList', JSON.stringify(newList))
-        return newList
-      })
-    }
-
-    loadUserLists();
-
-    // Update the userStatus for all existing chat messages
-    updateChatMessagesStatus(uniqueId, {isFriend: false, isUndesirable: false})
-  }
-  
   // New helper function to update the userStatus for all existing chat messages
   const updateChatMessagesStatus = (uniqueId, newStatus) => {
     setChatMessages(prevMessages => {
@@ -775,33 +626,14 @@ function App() {
       })
     })
 
-    // Also update mazic list if needed
-    setMazicList(prevList => {
-      return prevList.map(item => {
-        if (item.uniqueId === uniqueId) {
-          return { ...item, userStatus: newStatus }
-        }
-        return item
-      })
-    })
+    
 
-    // Also update likes array for top likers
-    setLikes(prevLikes => {
-      return prevLikes.map(liker => {
-        if (liker.uniqueId === uniqueId) {
-          return { ...liker, userStatus: newStatus }
-        }
-        return liker
-      })
-    })
+    
 
     console.log(`User ${uniqueId} status updated across the app: ${JSON.stringify(newStatus)}`)
   }
   
-  // Toggle user lists panel
-  const toggleUserLists = () => {
-    setShowUserLists(prev => !prev)
-  }
+
   
   // Sanitize text to prevent XSS
   const sanitize = (text) => {
@@ -925,87 +757,11 @@ function App() {
     }
   }
   
-  // Function to process messages with current prefix
-  const processMessageWithCurrentPrefix = (data) => {
-    let savedPrefix = localStorage.getItem('mazicPrefix');
-    
-    if (savedPrefix) {
-      setMazicPrefix(savedPrefix);
-    } else {
-      setMazicPrefix('mazic:');
-      localStorage.setItem('mazicPrefix', 'mazic:');
-      savedPrefix = 'mazic:';
-    }
-    console.log("Got the prefix :" + savedPrefix);
-    if (data.comment.toLowerCase().startsWith(savedPrefix.toLowerCase())) {
-      console.log("Found the prefix");
-      console.log("Got the comment :" + data.comment);
-      
-      // Get the user's status for highlighting in the mazic list
-      const userStatus = data.userStatus || checkUserStatus(data);
-      
-      // Add user status info to the mazic entry
-      const restOfComment = data.nickname + ": " + data.comment.slice(savedPrefix.length);
-      const mazicEntry = {
-        text: restOfComment,
-        uniqueId: data.uniqueId,
-        userStatus: userStatus
-      };
-      
-      setMazicList(prevList => [...prevList, mazicEntry]);
-    }
-  };
   
-  // Function to clear the mazic list
-  const clearMazicList = () => {
-    setMazicList([]);
-  }
   
-  // Function to remove a single message from the mazic list
-  const removeFromMazicList = (index) => {
-    setMazicList(prevList => {
-      const newList = [...prevList];
-      newList.splice(index, 1);
-      return newList;
-    });
-  }
   
-  // Update mazicPrefix and save to localStorage
-  const updateMazicPrefix = (newPrefix) => {
-    setMazicPrefix(newPrefix);
-    localStorage.setItem('mazicPrefix', newPrefix);
-    
-    // Reprocess all existing messages with the new prefix
-    setMazicList([]); // Clear existing list
-    
-    // Apply new prefix to all stored messages
-    const newMazicMessages = [];
-    
-    allChatMessages.forEach(msg => {
-      if (msg.comment && msg.comment.toLowerCase().startsWith(newPrefix.toLowerCase())) {
-        const restOfComment = msg.nickname + ": " + msg.comment.slice(newPrefix.length);
-        
-        // Create a mazic entry with user status
-        const userStatus = msg.userStatus || checkUserStatus(msg);
-        const mazicEntry = {
-          text: restOfComment,
-          uniqueId: msg.uniqueId,
-          userStatus: userStatus
-        };
-        
-        newMazicMessages.push(mazicEntry);
-      }
-    });
-    
-    // Update the mazic list with all matching messages
-    setMazicList(newMazicMessages);
-    
-    // Display a console log that future messages will be filtered with this prefix
-    console.log(`Filtrage des messages avec le nouveau préfixe : "${newPrefix}"`);
-    
-    // Try to save to API if that functionality is added later
-    
-  };
+  
+  
   
   return (
     <div className={`min-h-screen w-full bg-gray-950 text-white ${darkTheme ? 'dark' : 'light'}`}>
@@ -1014,29 +770,7 @@ function App() {
         removeNotification={removeNotification} 
       />
       
-      {/* Toggle button for user lists */}
-      {/* <button 
-        id="toggleUserLists" 
-        className="fixed top-4 left-4 z-50 flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
-        onClick={toggleUserLists}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-        </svg>
-        Gérer les listes
-      </button> */}
       
-      {/* User Lists Panel */}
-      <UserLists 
-        friendsList={friendsList}
-        undesirablesList={undesirablesList}
-        removeFriend={removeFriend}
-        removeUndesirable={removeUndesirable}
-        addToFriendsList={addToFriendsList}
-        addToUndesirablesList={addToUndesirablesList}
-        showUserLists={showUserLists}
-        toggleUserLists={toggleUserLists}
-      />
       
       <header className="py-4 px-6 bg-gray-900 border-b border-gray-800">
         <div className="container mx-auto">
@@ -1053,7 +787,7 @@ function App() {
                 error={error}
               />
               
-              <Settings 
+              {/* <Settings 
                 darkTheme={darkTheme}
                 setDarkTheme={handleThemeChange}
                 showModeration={showModeration}
@@ -1080,7 +814,7 @@ function App() {
                 tavilyApiKey={tavilyApiKey}
                 setTavilyApiKey={setTavilyApiKey}
                 setAvailableOllamaModels={setAvailableOllamaModels}
-              />
+              /> */}
             </div>
           ) : (
             <div className="flex flex-col md:flex-row justify-between">
@@ -1104,13 +838,7 @@ function App() {
         <main className="container-fluid px-4 py-6">
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-6">
-              {/* <VideoPlayer 
-                username={username}
-                enableFlvStream={enableFlvStream}
-                connectionRef={connectionRef}
-                openaiApiKey={openaiApiKey}
-              /> */}
-              
+              <Spectrum chatMessages={chatMessages}/>
               
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                 <div className="lg:col-span-1">
@@ -1129,27 +857,9 @@ function App() {
                     diamondsCount={diamondsCount}
                   />
                 </div>
-                {/* <div className="lg:col-span-1">
-            <MazicList 
-                mazicList={mazicList} 
-                clearMazicList={clearMazicList} 
-                removeFromMazicList={removeFromMazicList}
-                mazicPrefix={mazicPrefix}
-                setMazicPrefix={updateMazicPrefix}
-              />
-              </div> */}
               </div>
             </div>
-            
-            
-            {/* <div className="lg:col-span-1 space-y-6">
-              {showModeration && (
-                <ModerationStats moderationStats={moderationStats} />
-              )}
-              
-              <TopLikers likers={likes} />
-              <GiftsContainer gifts={gifts} />
-            </div> */}
+          
           </div>
         </main>
       )}
