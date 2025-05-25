@@ -75,6 +75,15 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
 
   const parseSpectrumMessage = (message) => {
     if (!message.comment) return;
+
+    if(message.nickname=="SamLePirate"){
+      //if the comment is a claim, set the claim
+      const match = message.comment.match(/^claim\s*:\s*([^\n]+)$/i);
+      if (match) {
+        setClaim(match[1]);
+        return;
+      }
+    }
     
     const match = message.comment.match(/^spectrum\s*:\s*([0-6])$/i);
     if (!match) return;
@@ -140,7 +149,8 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
 
     //draw claim
     ctx.fillStyle = "#000";
-    ctx.font = "bold 32px monospace";
+    
+    ctx.font = "bold 48px monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(claim, width / 2, height * 0.1);
@@ -234,16 +244,16 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
         
         // Calculate arrow width based on number of users in sector
         const baseWidth = 5;
-        const maxWidth = 20;
-        const arrowWidth = Math.min(baseWidth + (count * 2), maxWidth)*20;
+        const maxWidth = 100;
+        const arrowWidth = Math.min(baseWidth + (count * 10), maxWidth)*2;
         
         // Draw arrow
         ctx.save();
         ctx.beginPath();
         
         // Calculate arrow points
-        const startX = cx + (265) * Math.cos(sectorCenterAngle);
-        const startY = cy + (265) * Math.sin(sectorCenterAngle);
+        const startX = cx + (280) * Math.cos(sectorCenterAngle);
+        const startY = cy + (280) * Math.sin(sectorCenterAngle);
         const endX = cx + (innerRadius) * Math.cos(sectorCenterAngle);
         const endY = cy + (innerRadius) * Math.sin(sectorCenterAngle);
         
@@ -276,7 +286,7 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
       // Draw spectrum users in this segment
       const usersInSegment = spectrumUserData.filter(user => user.spectrumValue === i);
       const userRadius = 50;
-      const userSpacing = 15;
+      const userSpacing = 19;
       const segmentWidth = outerRadius - innerRadius;
       
       // Calculate how many users can fit in the segment
@@ -289,12 +299,12 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
         const col = userIndex % maxUsersPerRow;
         
         // Calculate angle within the segment (centered)
-        const angleOffset = (segmentAngle * 0.25); // Start at 10% of segment
-        const angleStep = (segmentAngle * 0.99) / (maxUsersPerRow - 1); // Use 80% of segment for spacing
+        const angleOffset = (segmentAngle * 0.30); // Start at 10% of segment
+        const angleStep = (segmentAngle * 0.70) / (maxUsersPerRow - 1); // Use 80% of segment for spacing
         const angle = segStart + angleOffset + (col * angleStep);
         
         // Calculate radius (centered in the segment width)
-        const radius = innerRadius + (segmentWidth * 0.5) + (row * (userRadius * 2 + userSpacing));
+        const radius = innerRadius + (segmentWidth * 0.2) + (row * (userRadius * 2 + userSpacing));
         
         const x = cx + radius * Math.cos(angle);
         const y = cy + radius * Math.sin(angle);
@@ -319,7 +329,14 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
           ctx.font = "bold 16px Arial";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(user.nickname+" "+user.spectrumValue, 0, 0);
+          //white background rectangle just under the nickname, based on the length of the nickname
+          ctx.fillStyle = "#fff";
+          ctx.strokeStyle = "#000";
+          ctx.lineWidth = 2;
+          ctx.fillRect(-(user.nickname.length*10)/2, -15, user.nickname.length*10, 25);
+          ctx.strokeRect(-(user.nickname.length*10)/2, -15, user.nickname.length*10, 25);
+          ctx.fillStyle = "#000";
+          ctx.fillText(user.nickname, 0, 0);
           ctx.restore();
         };
       });
@@ -331,7 +348,7 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
       
       // Calculate points along the arc for the text
       const text = labels[i];
-      const totalAngle = angleStep * 0.8; // Use 80% of the segment angle
+      const totalAngle = angleStep * 0.9; // Use 80% of the segment angle
       const arcLength = labelRadius * totalAngle; // Total arc length
       const spacing = (arcLength - totalTextWidth) / (longestLabel.length - 1);
       const anglePerChar = (charWidth + spacing) / labelRadius;
@@ -348,8 +365,8 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
         );
         ctx.rotate(currentAngle + Math.PI / 2);
         
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 24px monospace";
+        ctx.fillStyle = "#FFF";
+        ctx.font = "bold 28px monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(text[j], 0, -150);
@@ -456,6 +473,13 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
               ctx.font = "bold 16px Arial";
               ctx.textAlign = "center";
               ctx.textBaseline = "middle";
+              //white background rectangle just under the nickname, based on the length of the nickname
+              ctx.fillStyle = "#fff";
+              ctx.strokeStyle = "#000";
+              ctx.lineWidth = 2;
+              ctx.fillRect(-(user.nickname.length*10)/2, -15, user.nickname.length*10, 25);
+              ctx.strokeRect(-(user.nickname.length*10)/2, -15, user.nickname.length*10, 25);
+              ctx.fillStyle = "#000";
               ctx.fillText(user.nickname, 0, 0);
               ctx.restore();
               resolveUser();
