@@ -45,7 +45,7 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
   const width = size;
   const height = size * 0.6; // semi-circle, so less height
 
-  const [claim,setClaim] = useState("Le Developpement React, c'est bien mieux que le Developpement Angular");
+  const [claim,setClaim] = useState("Le Spectrum, c'est hyper cool :) ");
   const [tempClaim, setTempClaim] = useState(claim);
   const [claimsHistory, setClaimsHistory] = useState([{
     text: claim,
