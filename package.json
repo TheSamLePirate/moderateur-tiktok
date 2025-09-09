@@ -1,8 +1,8 @@
 {
-  "name": "tiktok-chat-moderator",
-  "productName": "TikTok Chat Moderator",
+  "name": "tiktok-spectrum",
+  "productName": "TikTok Spectrum",
   "version": "1.1.13",
-  "description": "TikTok Live Chat Moderator App with AI Response Suggestions",
+  "description": "TikTok Spectrum",
   "author": {
     "name": "SamLePirate"
   },
@@ -37,7 +37,7 @@
         "to": ".env"
       }
     ],
-    "appId": "com.samlepirate.tiktok-chat-moderator",
+    "appId": "com.samlepirate.tiktok-spectrum",
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
