@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master,spectrum ]
     paths-ignore:
       - 'package.json'
       - 'package-lock.json'

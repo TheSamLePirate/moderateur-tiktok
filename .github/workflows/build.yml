@@ -2,11 +2,11 @@ name: Build Application
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master,spectrum ]
     paths:
       - 'package.json'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master,spectrum ]
   workflow_dispatch:
     # Allows manual trigger from the Actions tab
   repository_dispatch:
