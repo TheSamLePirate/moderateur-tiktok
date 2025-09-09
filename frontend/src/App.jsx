@@ -838,7 +838,7 @@ function App() {
         <main className="container-fluid px-4 py-6">
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-6">
-              <Spectrum chatMessages={chatMessages}/>
+              <Spectrum chatMessages={chatMessages} username={username}/>
               
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                 <div className="lg:col-span-1">

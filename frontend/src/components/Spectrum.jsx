@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import brainImage from '../assets/brain.png';
 
 const labels = [
@@ -21,15 +21,22 @@ const segmentColors = [
   "#3a1fa6", // blueish purple
 ];
 
-const centerLabels = [
-  "Indifférent ou sans avis",
-  "Pas répondu encore"
-];
+// const centerLabels = [
+//   "Indifférent ou sans avis",
+//   "Pas répondu encore"
+// ];
 
 
 
 
-const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
+const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
+
+  const [username2, setUsername] = useState(username);
+
+  useEffect(() => {
+    setUsername(username);
+  }, [username]);
+
   console.log(chatMessages[chatMessages.length - 1]);
   const canvasRef = useRef(null);
   const width = size;
@@ -45,7 +52,7 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
   // Find the longest label for consistent spacing
   const longestLabel = labels.reduce((a, b) => a.length > b.length ? a : b);
   const charWidth = 12; // Approximate width of each character in pixels
-  const totalTextWidth = charWidth * longestLabel.length*0.9;
+  const totalTextWidth = charWidth * longestLabel.length * 0.9;
 
   const [publicData, setPublicData] = useState([0,0,0,0,0,0,0]);  //sum of number of user that have the same spectrum from the labels. It is an array of 7 elements
   const [spectrumUserData, setSpectrumUserData] = useState([]);  //array of users with their spectrum data. userId is unique so it is a set
@@ -53,10 +60,14 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
   const [startTime, setStartTime] = useState(Date.now());
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingSpectrumUsers, setPendingSpectrumUsers] = useState([]); // Track users who haven't provided a value
+  const [publicUserVotes, setPublicUserVotes] = useState({}); // userId -> spectrumValue
 
   const [allUsers, setAllUsers] = useState([]);
   const [spectrumUsers, setSpectrumUsers] = useState([]);
   const [processedMessages, setProcessedMessages] = useState(new Set());
+  const [publicVotesHistory, setPublicVotesHistory] = useState([]); // Store all public votes with timestamps
+  const [spectrumVotesHistory, setSpectrumVotesHistory] = useState([]); // Store all spectrum user votes with timestamps
+  const [positionChanges, setPositionChanges] = useState([]); // Store position change messages
 
   //message  has nickname,profilePictureUrl,uniqueId and userId and createTime(unix timestamp)
 
@@ -73,14 +84,84 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
     setPendingSpectrumUsers(pendingSpectrumUsers.filter(u => u.userId !== user.userId));
   }
 
-  const parseSpectrumMessage = (message) => {
+  // Function to detect position change messages
+  const detectPositionChange = useCallback((message) => {
+    if (!message.comment) return null;
+
+    // Pattern to match "@userId changed my mind" or similar variations
+    const positionChangePatterns = [
+      /@(\w+)\s+changed\s+my\s+mind/i,
+      /@(\w+)\s+changed\s+position/i,
+      /@(\w+)\s+changed\s+opinion/i,
+      /@(\w+)\s+changed\s+view/i,
+      /@(\w+)\s+changed\s+stance/i,
+      /@(\w+)\s+changed\s+stand/i,
+      /@(\w+)\s+changed\s+mind/i,
+      /@(\w+)\s+changed\s+avis/i, // French version
+      /@(\w+)\s+changé\s+d'avis/i, // French version
+      /@(\w+)\s+changé\s+d'opinion/i, // French version
+      /@(\w+)\s+changé\s+de\s+position/i, // French version
+    ];
+
+    for (const pattern of positionChangePatterns) {
+      const match = message.comment.match(pattern);
+      if (match) {
+        const mentionedUserId = match[1];
+        return {
+          mentionedUserId,
+          originalMessage: message.comment,
+          changerUserId: message.userId,
+          changerNickname: message.nickname,
+          changerProfilePicture: message.profilePictureUrl,
+          timestamp: message.createTime,
+          readableTimestamp: new Date(message.createTime * 1000).toISOString()
+        };
+      }
+    }
+
+    return null;
+  }, []);
+
+  const parseSpectrumMessage = useCallback((message) => {
     if (!message.comment) return;
 
-    if(message.nickname=="SamLePirate"){
+    // Check for position change messages
+    const positionChange = detectPositionChange(message);
+    if (positionChange) {
+      setPositionChanges(prev => [...prev, positionChange]);
+      console.log(`Position change detected: ${positionChange.changerNickname} mentioned that @${positionChange.mentionedUserId} changed their mind`);
+    }
+
+    if(message.uniqueId==username2){
       //if the comment is a claim, set the claim
       const match = message.comment.match(/^claim\s*:\s*([^\n]+)$/i);
       if (match) {
         setClaim(match[1]);
+        setTempClaim(match[1]);
+        setClaimsHistory(prev => [...prev, {
+          text: match[1],
+          timestamp: Date.now()
+        }]);
+        //reset public data
+        setPublicData([0,0,0,0,0,0,0]);
+        setPublicUserVotes({});
+        setPublicVotesHistory([]);
+        setSpectrumUserData([]);
+        setSpectrumVotesHistory([]);
+        setPositionChanges([]); // Reset position changes
+        //setAllUsers([]);
+        //setSpectrumUsers([]);
+        setProcessedMessages(new Set());
+        setStartTime(Date.now());
+
+        //reset spectrum
+        setSpectrumUserData([]);
+        setSpectrumVotesHistory([]);
+        //setAllUsers([]);
+        //setSpectrumUsers([]);
+        setProcessedMessages(new Set());
+        setStartTime(Date.now());
+
         return;
       }
     }
@@ -90,6 +171,8 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
     
     const spectrumValue = parseInt(match[1]);
     const isSpectrumUser = spectrumUsers.some(u => u.userId === message.userId);
+
+    console.log(message.nickname+" voted for "+spectrumValue);
     
     if (isSpectrumUser) {
       // Remove from pending users when they provide a value
@@ -105,17 +188,52 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
           spectrumValue
         }];
       });
+
+      // Add to spectrum votes history
+      setSpectrumVotesHistory(prev => [...prev, {
+        userId: message.userId,
+        nickname: message.nickname,
+        profilePictureUrl: message.profilePictureUrl,
+        spectrumValue,
+        claim: claim,
+        timestamp: message.createTime,
+        readableTimestamp: new Date(message.createTime * 1000).toISOString()
+      }]);
     } else {
-      // Update public data
+      // Update public data - handle previous votes
       console.log("update public data");
       console.log(spectrumValue);
       setPublicData(prev => {
         const newData = [...prev];
+        
+        // If user has voted before, decrement their previous vote
+        if (publicUserVotes[message.userId] !== undefined) {
+          newData[publicUserVotes[message.userId]] -= 1;
+        }
+        
+        // Increment their new vote
         newData[spectrumValue] += 1;
         return newData;
       });
+      
+      // Update the user's current vote
+      setPublicUserVotes(prev => ({
+        ...prev,
+        [message.userId]: spectrumValue
+      }));
+
+      // Add to public votes history
+      setPublicVotesHistory(prev => [...prev, {
+        userId: message.userId,
+        nickname: message.nickname,
+        profilePictureUrl: message.profilePictureUrl,
+        spectrumValue,
+        claim: claim,
+        timestamp: message.createTime,
+        readableTimestamp: new Date(message.createTime * 1000).toISOString()
+      }]);
     }
-  };
+  }, [username2, spectrumUsers, publicUserVotes, claim, detectPositionChange]);
 
   //for each message, add the user to the allUsers array if they are not already in it
   useEffect(() => {
@@ -127,13 +245,13 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
     
     newMessages.forEach(message => {
       if (!allUsers.some(u => u.userId === message.userId)) {
-        setAllUsers([...allUsers,{userId:message.userId,nickname:message.nickname,profilePictureUrl:message.profilePictureUrl}]);
+        setAllUsers(prev => [...prev,{userId:message.userId,nickname:message.nickname,profilePictureUrl:message.profilePictureUrl}]);
       }
       parseSpectrumMessage(message);
       // Mark message as processed using createTime
       setProcessedMessages(prev => new Set([...prev, message.createTime.toString()]));
     });
-  }, [chatMessages]);
+  }, [chatMessages, startTime, processedMessages, allUsers, parseSpectrumMessage]);
 
 
 
@@ -239,7 +357,6 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
       Object.entries(sectorUserCounts).forEach(([sectorValue, count]) => {
         const sectorIndex = parseInt(sectorValue);
         const segStart = startAngle + sectorIndex * angleStep;
-        const segEnd = segStart + angleStep;
         const sectorCenterAngle = segStart + angleStep / 2;
         
         // Calculate arrow width based on number of users in sector
@@ -493,7 +610,7 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
 
     // Execute the drawing operations in sequence
     loadBrainImage().then(() => loadUserImages());
-  }, [width, height, publicData, spectrumUserData, showPublic, claim, pendingSpectrumUsers]);
+  }, [width, height, publicData, spectrumUserData, showPublic, claim, pendingSpectrumUsers, longestLabel.length, totalTextWidth]);
 
   // Helper to convert hex color to rgba with opacity
   function hexToRgba(hex, alpha) {
@@ -508,19 +625,144 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  // Function to convert array of objects to CSV
+  const convertToCSV = (data, headers) => {
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          // Escape commas and quotes in CSV
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(',')
+      )
+    ].join('\n');
+    return csvContent;
+  };
+
+  // Function to download CSV file
+  const downloadCSV = (csvContent, filename) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Function to download public votes as CSV
+  const downloadPublicVotesCSV = () => {
+    const headers = ['userId', 'nickname', 'spectrumValue', 'claim', 'timestamp', 'readableTimestamp'];
+    const csvContent = convertToCSV(publicVotesHistory, headers);
+    downloadCSV(csvContent, 'publicVotes.csv');
+  };
+
+  // Function to download spectrum user votes as CSV
+  const downloadSpectrumUserVotesCSV = () => {
+    const headers = ['userId', 'nickname', 'spectrumValue', 'claim', 'timestamp', 'readableTimestamp'];
+    const csvContent = convertToCSV(spectrumVotesHistory, headers);
+    downloadCSV(csvContent, 'SpectrumUserVotes.csv');
+  };
+
+  // Function to download position changes as CSV
+  const downloadPositionChangesCSV = () => {
+    const headers = ['changerUserId', 'changerNickname', 'mentionedUserId', 'originalMessage', 'timestamp', 'readableTimestamp'];
+    const csvContent = convertToCSV(positionChanges, headers);
+    downloadCSV(csvContent, 'PositionChanges.csv');
+  };
+
   return (
     <div>
-      <button onClick={() => setShowPublic(!showPublic)}>
-        {showPublic ? "Hide public" : "Show public"}
-      </button>
-      <button onClick={() => {
-        setPublicData([0,0,0,0,0,0,0]);
-        setSpectrumUserData([]);
-        //setAllUsers([]);
-        setSpectrumUsers([]);
-        setProcessedMessages(new Set());
-        setStartTime(Date.now()); // Reset start time to current time
-      }}> Reset All Data</button>
+
+      <h1>{username2}</h1>
+      <div style={{ display: 'flex', gap: '1rem', padding: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button onClick={() => setShowPublic(!showPublic)}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor:  'pointer',
+            fontSize: '1rem'
+          }}
+          >
+          {showPublic ? "Hide public" : "Show public"}
+        </button>
+        <button onClick={() => {
+          setPublicData([0,0,0,0,0,0,0]);
+          setSpectrumUserData([]);
+          setPublicUserVotes({});
+          setPublicVotesHistory([]);
+          setSpectrumVotesHistory([]);
+          setPositionChanges([]); // Reset position changes
+          //setAllUsers([]);
+          setSpectrumUsers([]);
+          setProcessedMessages(new Set());
+          setStartTime(Date.now()); // Reset start time to current time
+        }}
+        style={{
+          padding: '0.5rem 1rem',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '1rem'
+        }}
+        > Reset All Data</button>
+        <button 
+          onClick={downloadPublicVotesCSV}
+          disabled={publicVotesHistory.length === 0}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: publicVotesHistory.length === 0 ? '#ccc' : '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: publicVotesHistory.length === 0 ? 'not-allowed' : 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          Download Public Votes CSV ({publicVotesHistory.length})
+        </button>
+        <button 
+          onClick={downloadSpectrumUserVotesCSV}
+          disabled={spectrumVotesHistory.length === 0}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: spectrumVotesHistory.length === 0 ? '#ccc' : '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: spectrumVotesHistory.length === 0 ? 'not-allowed' : 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          Download Spectrum User Votes CSV ({spectrumVotesHistory.length})
+        </button>
+        <button 
+          onClick={downloadPositionChangesCSV}
+          disabled={positionChanges.length === 0}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: positionChanges.length === 0 ? '#ccc' : '#f59e0b',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: positionChanges.length === 0 ? 'not-allowed' : 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          Download Position Changes CSV ({positionChanges.length})
+        </button>
+      </div>
       <p>{chatMessages.length} messages</p>
 
       
@@ -710,6 +952,58 @@ const Spectrum = ({ size = 1920 ,chatMessages=[]}) => {
             </small>
           </div>
         ))}
+      </div>
+
+      <div style={{ 
+        maxHeight: '200px', 
+        overflowY: 'auto',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '1rem',
+        margin: '1rem',
+        backgroundColor: '#f0f9ff'
+      }}>
+        <h3 style={{ marginBottom: '1rem', color: '#333' }}>Position Changes ({positionChanges.length})</h3>
+        {positionChanges.length === 0 ? (
+          <p style={{ color: '#64748b', fontStyle: 'italic' }}>No position changes detected yet</p>
+        ) : (
+          positionChanges.map((change, index) => (
+            <div key={index} style={{
+              padding: '0.5rem',
+              borderBottom: '1px solid #e2e8f0',
+              marginBottom: '0.5rem',
+              backgroundColor: '#fff',
+              borderRadius: '4px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <img 
+                  src={change.changerProfilePicture} 
+                  alt={change.changerNickname} 
+                  style={{ 
+                    width: '24px', 
+                    height: '24px', 
+                    borderRadius: '50%',
+                    objectFit: 'cover'
+                  }} 
+                />
+                <span style={{ fontWeight: 'bold', color: '#1e293b' }}>
+                  {change.changerNickname}
+                </span>
+                <span style={{ color: '#64748b' }}>mentioned that</span>
+                <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>
+                  @{change.mentionedUserId}
+                </span>
+                <span style={{ color: '#64748b' }}>changed their mind</span>
+              </div>
+              <p style={{ margin: '0.25rem 0', color: '#374151', fontSize: '0.9rem' }}>
+                "{change.originalMessage}"
+              </p>
+              <small style={{ color: '#64748b' }}>
+                {new Date(change.timestamp * 1000).toLocaleString()}
+              </small>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
