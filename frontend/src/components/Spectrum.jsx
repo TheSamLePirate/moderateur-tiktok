@@ -5,7 +5,7 @@ const defaultLabels = [
   "Complètement d'accord",
   "D'accord",
   "Un peu d'accord",
-  "Neutre :)",
+  "Neutre",
   "Un peu en désaccord",
   "En désaccord",
   "Complètement en désaccord",
