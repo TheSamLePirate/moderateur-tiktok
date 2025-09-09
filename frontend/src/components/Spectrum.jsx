@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import brainImage from '../assets/brain.png';
 
-const labels = [
+const defaultLabels = [
   "Complètement d'accord",
   "D'accord",
   "Un peu d'accord",
@@ -11,7 +11,7 @@ const labels = [
   "Complètement en désaccord",
 ];
 
-const segmentColors = [
+const defaultSegmentColors = [
   "#f48be3", // light pink-purple
   "#e16be2", // pinkish purple
   "#c44fd9", // medium purple
@@ -32,6 +32,9 @@ const segmentColors = [
 const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
 
   const [username2, setUsername] = useState(username);
+  const [labels, setLabels] = useState(defaultLabels);
+  const [segmentColors, setSegmentColors] = useState(defaultSegmentColors);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   useEffect(() => {
     setUsername(username);
@@ -165,8 +168,11 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
         return;
       }
     }
+    const numberOfLabels = labels.length-1;
+
+    const regex = new RegExp(`^spectrum\\s*:\\s*([0-${numberOfLabels}])$`, 'i');
     
-    const match = message.comment.match(/^spectrum\s*:\s*([0-6])$/i);
+    const match = message.comment.match(regex);
     if (!match) return;
     
     const spectrumValue = parseInt(match[1]);
@@ -233,7 +239,7 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
         readableTimestamp: new Date(message.createTime * 1000).toISOString()
       }]);
     }
-  }, [username2, spectrumUsers, publicUserVotes, claim, detectPositionChange]);
+  }, [username2, spectrumUsers, publicUserVotes, claim, detectPositionChange, labels.length]);
 
   //for each message, add the user to the allUsers array if they are not already in it
   useEffect(() => {
@@ -610,7 +616,7 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
 
     // Execute the drawing operations in sequence
     loadBrainImage().then(() => loadUserImages());
-  }, [width, height, publicData, spectrumUserData, showPublic, claim, pendingSpectrumUsers, longestLabel.length, totalTextWidth]);
+  }, [width, height, publicData, spectrumUserData, showPublic, claim, pendingSpectrumUsers, longestLabel.length, totalTextWidth, labels, segmentColors]);
 
   // Helper to convert hex color to rgba with opacity
   function hexToRgba(hex, alpha) {
@@ -658,15 +664,23 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
 
   // Function to download public votes as CSV
   const downloadPublicVotesCSV = () => {
-    const headers = ['userId', 'nickname', 'spectrumValue', 'claim', 'timestamp', 'readableTimestamp'];
-    const csvContent = convertToCSV(publicVotesHistory, headers);
+    const headers = ['userId', 'nickname', 'spectrumValue', 'label', 'claim', 'timestamp', 'readableTimestamp'];
+    const dataWithLabels = publicVotesHistory.map(vote => ({
+      ...vote,
+      label: labels[vote.spectrumValue] || 'Unknown'
+    }));
+    const csvContent = convertToCSV(dataWithLabels, headers);
     downloadCSV(csvContent, 'publicVotes.csv');
   };
 
   // Function to download spectrum user votes as CSV
   const downloadSpectrumUserVotesCSV = () => {
-    const headers = ['userId', 'nickname', 'spectrumValue', 'claim', 'timestamp', 'readableTimestamp'];
-    const csvContent = convertToCSV(spectrumVotesHistory, headers);
+    const headers = ['userId', 'nickname', 'spectrumValue', 'label', 'claim', 'timestamp', 'readableTimestamp'];
+    const dataWithLabels = spectrumVotesHistory.map(vote => ({
+      ...vote,
+      label: labels[vote.spectrumValue] || 'Unknown'
+    }));
+    const csvContent = convertToCSV(dataWithLabels, headers);
     downloadCSV(csvContent, 'SpectrumUserVotes.csv');
   };
 
@@ -762,10 +776,191 @@ const Spectrum = ({ size = 1920, chatMessages = [], username }) => {
         >
           Download Position Changes CSV ({positionChanges.length})
         </button>
+        <button onClick={() => setShowEditForm(!showEditForm)}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#8b5cf6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '1rem'
+          }}
+        >
+          {showEditForm ? "Hide Edit Form" : "Edit Labels & Colors"}
+        </button>
       </div>
       <p>{chatMessages.length} messages</p>
 
-      
+      {showEditForm && (
+        <div style={{
+          backgroundColor: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          padding: '1.5rem',
+          margin: '1rem',
+          maxWidth: '1200px',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
+          <h3 style={{ marginBottom: '1rem', color: '#333' }}>Edit Labels and Colors</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            {labels.map((label, index) => (
+              <div key={index} style={{
+                backgroundColor: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '1rem',
+                position: 'relative'
+              }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 'bold', color: '#374151' }}>
+                    Label {index + 1}:
+                  </label>
+                  <input
+                    type="text"
+                    value={label}
+                    onChange={(e) => {
+                      const newLabels = [...labels];
+                      newLabels[index] = e.target.value;
+                      setLabels(newLabels);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 'bold', color: '#374151' }}>
+                    Color:
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="color"
+                      value={segmentColors[index]}
+                      onChange={(e) => {
+                        const newColors = [...segmentColors];
+                        newColors[index] = e.target.value;
+                        setSegmentColors(newColors);
+                      }}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={segmentColors[index]}
+                      onChange={(e) => {
+                        const newColors = [...segmentColors];
+                        newColors[index] = e.target.value;
+                        setSegmentColors(newColors);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '0.9rem',
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (labels.length > 1) {
+                      const newLabels = labels.filter((_, i) => i !== index);
+                      const newColors = segmentColors.filter((_, i) => i !== index);
+                      setLabels(newLabels);
+                      setSegmentColors(newColors);
+                    }
+                  }}
+                  disabled={labels.length <= 1}
+                  style={{
+                    position: 'absolute',
+                    top: '0.5rem',
+                    right: '0.5rem',
+                    width: '24px',
+                    height: '24px',
+                    backgroundColor: labels.length <= 1 ? '#ccc' : '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    cursor: labels.length <= 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title={labels.length <= 1 ? 'Cannot delete - minimum 1 segment required' : 'Delete segment'}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                const newLabels = [...labels, `New Label ${labels.length + 1}`];
+                const newColors = [...segmentColors, '#3b82f6']; // Default blue color
+                setLabels(newLabels);
+                setSegmentColors(newColors);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              + Add Segment
+            </button>
+            <button
+              onClick={() => {
+                setLabels(defaultLabels);
+                setSegmentColors(defaultSegmentColors);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Reset to Defaults
+            </button>
+            <button
+              onClick={() => setShowEditForm(false)}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '2rem', padding: '1rem' ,justifyContent: 'center'}}>
         <input
