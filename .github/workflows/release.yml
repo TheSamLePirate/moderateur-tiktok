@@ -2,7 +2,7 @@ name: Create Release
 
 on:
   push:
-    branches: [ main, master,spectrum ]
+    branches: [ main, master, spectrum ]
     paths-ignore:
       - 'package.json'
       - 'package-lock.json'
@@ -52,8 +52,13 @@ jobs:
     - name: Update package.json version
       run: |
         # Update version in package.json
+        echo "Updating package.json from $CURRENT_VERSION to $NEW_VERSION"
         npm version $NEW_VERSION --no-git-tag-version
         echo "Updated package.json to version $NEW_VERSION"
+        
+        # Verify the change
+        NEW_VERSION_CHECK=$(node -p "require('./package.json').version")
+        echo "Verification: package.json now shows version $NEW_VERSION_CHECK"
     
     - name: Generate changelog
       id: changelog
@@ -80,9 +85,34 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
+        
+        # Show git status before adding
+        echo "Git status before adding package.json:"
+        git status --porcelain
+        
         git add package.json
-        git commit -m "Bump version to $NEW_VERSION [skip ci]"
-        git tag v$NEW_VERSION
+        
+        # Show git status after adding
+        echo "Git status after adding package.json:"
+        git status --porcelain
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit, package.json version was already $NEW_VERSION"
+        else
+          echo "Committing changes..."
+          git commit -m "Bump version to $NEW_VERSION [skip ci]"
+          echo "Successfully committed version change"
+        fi
+        
+        # Check if tag already exists before creating it
+        if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
+          echo "Tag v$NEW_VERSION already exists, skipping tag creation"
+        else
+          echo "Creating tag v$NEW_VERSION..."
+          git tag v$NEW_VERSION
+          echo "Successfully created tag v$NEW_VERSION"
+        fi
     
     - name: Push changes
       uses: ad-m/github-push-action@master
