@@ -20,15 +20,15 @@ jobs:
         include:
           - os: windows-latest
             output_name: win
-            artifact_name: TikTok-Chat-Moderator-Windows
+            artifact_name: TikTok-Spectrum-Windows
             file_extension: ".exe"
           - os: macos-latest
             output_name: mac
-            artifact_name: TikTok-Chat-Moderator-macOS
+            artifact_name: TikTok-Spectrum-macOS
             file_extension: ".app"
           - os: ubuntu-latest
             output_name: linux
-            artifact_name: TikTok-Chat-Moderator-Linux
+            artifact_name: TikTok-Spectrum-Linux
             file_extension: ""
 
     runs-on: ${{ matrix.os }}
@@ -102,21 +102,21 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         cd dist/win-unpacked
-        7z a -r ../TikTok-Chat-Moderator-Windows-Portable-v${{ env.VERSION }}.zip *
+        7z a -r ../TikTok-Spectrum-Windows-Portable-v${{ env.VERSION }}.zip *
       shell: bash
         
     - name: Create ZIP for macOS Executable
       if: matrix.os == 'macos-latest'
       run: |
         cd dist/mac
-        zip -r ../TikTok-Chat-Moderator-macOS-Portable-v${{ env.VERSION }}.zip *.app
+        zip -r ../TikTok-Spectrum-macOS-Portable-v${{ env.VERSION }}.zip *.app
       shell: bash
         
     - name: Create ZIP for Linux Executable
       if: matrix.os == 'ubuntu-latest'
       run: |
         cd dist/linux-unpacked
-        zip -r ../TikTok-Chat-Moderator-Linux-Portable-v${{ env.VERSION }}.zip *
+        zip -r ../TikTok-Spectrum-Linux-Portable-v${{ env.VERSION }}.zip *
       shell: bash
         
     - name: Upload Artifacts

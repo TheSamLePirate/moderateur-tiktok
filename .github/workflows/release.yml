@@ -139,9 +139,9 @@ jobs:
           - Linux: Download the `.deb` package or `.AppImage`
           
           ### Portable Versions
-          - Windows: Download the `TikTok-Chat-Moderator-Windows-Portable-v${{ env.NEW_VERSION }}.zip` archive
-          - macOS: Download the `TikTok-Chat-Moderator-macOS-Portable-v${{ env.NEW_VERSION }}.zip` archive
-          - Linux: Download the `TikTok-Chat-Moderator-Linux-Portable-v${{ env.NEW_VERSION }}.zip` archive
+          - Windows: Download the `TikTok-Spectrum-Windows-Portable-v${{ env.NEW_VERSION }}.zip` archive
+          - macOS: Download the `TikTok-Spectrum-macOS-Portable-v${{ env.NEW_VERSION }}.zip` archive
+          - Linux: Download the `TikTok-Spectrum-Linux-Portable-v${{ env.NEW_VERSION }}.zip` archive
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
